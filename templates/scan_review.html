@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scan Review — Sukham</title>
+<link rel="stylesheet" href="/static/css/styleee.css">
+<style>
+/* ---------- Scan review page ---------- */
+.scan-hint { color: var(--text-dim); font-size: 0.92rem; margin: 4px 0 20px; }
+
+.scan-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media (max-width: 1000px) { .scan-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 600px)  { .scan-grid { grid-template-columns: 1fr; } }
+
+.scan-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 22px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  text-decoration: none;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+a.scan-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.15); }
+.scan-card.disabled { opacity: 0.6; cursor: not-allowed; }
+
+.scan-icon {
+  width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--border);
+}
+.scan-title { font-weight: 700; font-size: 1.05rem; }
+.scan-desc { font-size: 0.88rem; color: var(--text-dim); flex: 1; }
+
+.scan-tag {
+  align-self: flex-start;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+.scan-tag.open { background: var(--success-bg); color: var(--success); border-color: var(--success); }
+.scan-tag.soon { background: rgba(255,255,255,0.55); color: var(--text-dim); border-color: var(--border); }
+</style>
+</head>
+<body class="dashboard-body">
+
+<div class="dash-layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l2 8 4-16 2 8h8"/></svg>
+      </span>
+      Sukham
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="/doctor/dashboard" class="nav-item">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        Dashboard
+      </a>
+
+      <div class="nav-section-label">Doctor tools</div>
+      <a href="/doctor/scans" class="nav-item active">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>
+        Scan Review
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="/doctor/logout" class="nav-item" style="color:var(--text-dim);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Log out
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="main-content">
+
+    <div class="topbar">
+      <h2>Scan Review</h2>
+      <div class="topbar-actions">
+        <div class="avatar-pill">
+          <span class="avatar-circle">{{ doctor.name[0]|upper }}</span>
+          Dr. {{ doctor.name }}
+        </div>
+      </div>
+    </div>
+
+    <div class="d-card">
+      <h1>Choose a scan type</h1>
+      <p class="scan-hint">Pick a scan to upload and analyze with the AI model.</p>
+
+      <div class="scan-grid">
+
+        <a href="/doctor/xray" class="scan-card">
+          <span class="scan-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v9"/><path d="M12 12c-1-3-4-4-6-2s-3 6-2 9c.6 1.6 2.4 2 4 1l4-2"/><path d="M12 12c1-3 4-4 6-2s3 6 2 9c-.6 1.6-2.4 2-4 1l-4-2"/></svg>
+          </span>
+          <div class="scan-title">Pneumonia Scan</div>
+          <div class="scan-desc">Upload a chest X-ray and check for signs of pneumonia.</div>
+          <span class="scan-tag open">Open</span>
+        </a>
+
+        <div class="scan-card disabled">
+          <span class="scan-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </span>
+          <div class="scan-title">Eye Scan</div>
+          <div class="scan-desc">Retina and eye image analysis.</div>
+          <span class="scan-tag soon">Coming soon</span>
+        </div>
+
+        <div class="scan-card disabled">
+          <span class="scan-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>
+          </span>
+          <div class="scan-title">Bone Scan</div>
+          <div class="scan-desc">Fracture and bone X-ray analysis.</div>
+          <span class="scan-tag soon">Coming soon</span>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+</div>
+
+</body>
+</html>

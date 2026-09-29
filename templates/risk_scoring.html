@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Risk Scoring — Sukham</title>
+<link rel="stylesheet" href="/static/css/styleee.css">
+<style>
+/* ---------- Risk scoring page ---------- */
+input[type="number"] {
+  width: 100%;
+  padding: 11px 14px;
+  background: #f7f8fa;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color .15s ease;
+}
+input[type="number"]:focus { border-color: var(--accent); }
+
+.risk-hint { color: var(--text-dim); font-size: 0.92rem; margin: 4px 0 20px; }
+.risk-section-title { font-weight: 700; margin: 6px 0 12px; font-size: 0.95rem; }
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+@media (max-width: 800px) { .three-col { grid-template-columns: 1fr; } }
+
+.risk-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 18px 0 8px; }
+@media (max-width: 1100px) { .risk-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 600px)  { .risk-grid { grid-template-columns: 1fr; } }
+
+.risk-tile { background: rgba(255,255,255,0.45); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.risk-tile.overall { background: rgba(255,255,255,0.7); border-width: 2px; }
+.risk-tile-label { font-size: 0.85rem; color: var(--text-dim); font-weight: 600; }
+.risk-tile-score { font-size: 1.9rem; font-weight: 800; margin: 6px 0 10px; }
+.risk-tile-score span { font-size: 0.9rem; font-weight: 500; color: var(--text-dim); }
+
+.risk-badge { display: inline-block; padding: 4px 12px; border-radius: 999px; font-weight: 700; font-size: 0.82rem; border: 1px solid transparent; }
+.risk-badge.ok     { background: var(--success-bg); color: var(--success); border-color: var(--success); }
+.risk-badge.warn   { background: rgba(245,158,11,0.18); color: #92400e; border-color: #b45309; }
+.risk-badge.danger { background: var(--error-bg); color: var(--error); border-color: var(--error); }
+
+.risk-track { height: 10px; border-radius: 999px; background: rgba(255,255,255,0.6); border: 1px solid var(--border); overflow: hidden; margin-top: 12px; }
+.risk-fill { height: 100%; border-radius: 999px; }
+.risk-fill.ok     { background: var(--success); }
+.risk-fill.warn   { background: #d97706; }
+.risk-fill.danger { background: var(--error); }
+
+.risk-reasons { margin-top: 22px; }
+.risk-reasons h4 { margin: 16px 0 6px; font-size: 0.95rem; }
+.risk-reasons ul { margin: 0; padding-left: 20px; font-size: 0.9rem; color: var(--text-dim); }
+.risk-reasons li { margin: 3px 0; }
+.risk-none { font-size: 0.88rem; color: var(--text-dim); }
+
+.risk-disclaimer { margin: 22px 0 0; font-size: 0.82rem; color: var(--text-dim); }
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+</style>
+</head>
+<body class="dashboard-body">
+
+{# one Yes/No dropdown, used for the lifestyle questions #}
+{% macro yesno(name, label, default) %}
+  {% set current = form.get(name, default) %}
+  <div class="field">
+    <label for="{{ name }}">{{ label }}</label>
+    <select id="{{ name }}" name="{{ name }}" required>
+      <option value="yes" {{ 'selected' if current == 'yes' }}>Yes</option>
+      <option value="no"  {{ 'selected' if current == 'no' }}>No</option>
+    </select>
+  </div>
+{% endmacro %}
+
+{# one result tile #}
+{% macro tile(label, r, extra='') %}
+  {% set cls = {'Low': 'ok', 'Medium': 'warn', 'High': 'danger'}[r.level] %}
+  <div class="risk-tile {{ extra }}">
+    <div class="risk-tile-label">{{ label }}</div>
+    <div class="risk-tile-score">{{ r.score }}<span> / 100</span></div>
+    <span class="risk-badge {{ cls }}">{{ r.level }} risk</span>
+    <div class="risk-track"><div class="risk-fill {{ cls }}" style="width: {{ r.score }}%;"></div></div>
+  </div>
+{% endmacro %}
+
+<div class="dash-layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l2 8 4-16 2 8h8"/></svg>
+      </span>
+      Sukham
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="/doctor/dashboard" class="nav-item">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        Dashboard
+      </a>
+
+      <div class="nav-section-label">Doctor tools</div>
+      <a href="/doctor/risk" class="nav-item active">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        Risk Scoring
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="/doctor/logout" class="nav-item" style="color:var(--text-dim);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Log out
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="main-content">
+
+    <div class="topbar">
+      <h2>Risk Scoring</h2>
+      <div class="topbar-actions">
+        <div class="avatar-pill">
+          <span class="avatar-circle">{{ doctor.name[0]|upper }}</span>
+          Dr. {{ doctor.name }}
+        </div>
+      </div>
+    </div>
+
+    {% if errors %}
+    <ul class="flash-list">
+      {% for e in errors %}<li class="flash error">{{ e }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+
+    <!-- Form -->
+    <div class="d-card">
+      <h1>Patient health details</h1>
+      <p class="risk-hint">Choose a patient and enter their latest readings. Age and gender are taken from the patient's profile.</p>
+
+      {% if not patients %}
+        <p class="risk-none">No patients are registered yet. Once a patient signs up, they will appear here.</p>
+      {% else %}
+      <form method="post" action="/doctor/risk" id="risk-form">
+
+        <div class="field">
+          <label for="patient_id">Patient</label>
+          <select id="patient_id" name="patient_id" required onchange="if(this.value){location.href='/doctor/risk?patient_id='+this.value}">
+            <option value="" disabled {{ 'selected' if not selected_id }}>Select a patient</option>
+            {% for p in patients %}
+            <option value="{{ p.id }}" {{ 'selected' if selected_id == p.id }}>{{ p.name }} · {{ p.age }} yrs · {{ p.gender }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="risk-section-title">Body measurements</div>
+        <div class="two-col">
+          <div class="field">
+            <label for="height_cm">Height (cm)</label>
+            <input type="number" id="height_cm" name="height_cm" min="50" max="250" step="0.1" value="{{ form.get('height_cm', '') }}" placeholder="e.g. 170" required>
+          </div>
+          <div class="field">
+            <label for="weight_kg">Weight (kg)</label>
+            <input type="number" id="weight_kg" name="weight_kg" min="10" max="300" step="0.1" value="{{ form.get('weight_kg', '') }}" placeholder="e.g. 68" required>
+          </div>
+        </div>
+
+        <div class="risk-section-title">Blood pressure &amp; lab values</div>
+        <div class="two-col">
+          <div class="field">
+            <label for="systolic">Systolic BP (mmHg)</label>
+            <input type="number" id="systolic" name="systolic" min="70" max="250" value="{{ form.get('systolic', '') }}" placeholder="e.g. 120" required>
+          </div>
+          <div class="field">
+            <label for="diastolic">Diastolic BP (mmHg)</label>
+            <input type="number" id="diastolic" name="diastolic" min="40" max="150" value="{{ form.get('diastolic', '') }}" placeholder="e.g. 80" required>
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="field">
+            <label for="fasting_sugar">Fasting blood sugar (mg/dL)</label>
+            <input type="number" id="fasting_sugar" name="fasting_sugar" min="40" max="500" value="{{ form.get('fasting_sugar', '') }}" placeholder="e.g. 95" required>
+          </div>
+          <div class="field">
+            <label for="cholesterol">Total cholesterol (mg/dL)</label>
+            <input type="number" id="cholesterol" name="cholesterol" min="80" max="500" value="{{ form.get('cholesterol', '') }}" placeholder="e.g. 180" required>
+          </div>
+        </div>
+
+        <div class="risk-section-title">Lifestyle &amp; history</div>
+        <div class="two-col">
+          {{ yesno('smoker', 'Smokes?', 'no') }}
+          {{ yesno('drinker', 'Drinks alcohol?', 'no') }}
+        </div>
+        <div class="two-col">
+          {{ yesno('exercises', 'Exercises regularly?', 'yes') }}
+          {{ yesno('family_history', 'Family history of diabetes / heart disease / BP?', 'no') }}
+        </div>
+
+        <button class="btn" type="submit" id="risk-submit">Calculate risk</button>
+      </form>
+      {% endif %}
+    </div>
+
+    <!-- Result -->
+    {% if result %}
+    <div class="d-card">
+      <h3>Result{% if patient %} — {{ patient.name }}{% endif %}</h3>
+      <p class="risk-hint">BMI {{ result.bmi }} ({{ result.bmi_category }}){% if patient %} · Age {{ patient.age }} · {{ patient.gender }}{% endif %}</p>
+
+      <div class="risk-grid">
+        {{ tile('Overall risk', result.overall, 'overall') }}
+        {{ tile('Diabetes', result.diabetes) }}
+        {{ tile('Hypertension', result.hypertension) }}
+        {{ tile('Heart disease', result.heart) }}
+      </div>
+
+      <div class="risk-reasons">
+        {% for label, key in [('Diabetes', 'diabetes'), ('Hypertension', 'hypertension'), ('Heart disease', 'heart')] %}
+        <h4>Why: {{ label }}</h4>
+        {% if result[key].reasons %}
+        <ul>{% for reason in result[key].reasons %}<li>{{ reason }}</li>{% endfor %}</ul>
+        {% else %}
+        <p class="risk-none">No risk factors found for this condition.</p>
+        {% endif %}
+        {% endfor %}
+      </div>
+
+      <p class="risk-disclaimer">
+        This is a screening indication to support your judgement, not a diagnosis.
+        Overall risk weighs the highest single risk more than the average, so one very high risk is never hidden.
+      </p>
+    </div>
+    {% endif %}
+
+    <!-- History -->
+    {% if history %}
+    <div class="d-card">
+      <h3>Recent readings{% if patient %} — {{ patient.name }}{% elif selected_id %}{% endif %}</h3>
+      {% for h in history %}
+      {% set cls = {'Low': 'ok', 'Medium': 'warn', 'High': 'danger'}[h.level] %}
+      <div class="list-row">
+        <div class="list-main">
+          <div>
+            <div>{{ h.created_at }}</div>
+            <div class="list-sub">BMI {{ h.bmi }} · BP {{ h.systolic }}/{{ h.diastolic }} · Sugar {{ h.fasting_sugar }} · Chol {{ h.cholesterol }}</div>
+            <div class="list-sub">Diabetes {{ h.diabetes_score }} · Hypertension {{ h.hypertension_score }} · Heart {{ h.heart_score }}</div>
+          </div>
+        </div>
+        <span class="risk-badge {{ cls }}">Overall {{ h.overall_score }} · {{ h.level }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+  </main>
+</div>
+
+<script>
+  const riskForm = document.getElementById("risk-form");
+  if (riskForm) {
+    riskForm.addEventListener("submit", () => {
+      const btn = document.getElementById("risk-submit");
+      btn.disabled = true;
+      btn.textContent = "Calculating…";
+    });
+  }
+</script>
+</body>
+</html>

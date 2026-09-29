@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Profile — Sukham</title>
+<link rel="stylesheet" href="/static/css/styleee.css">
+</head>
+<body class="dashboard-body">
+
+<div class="dash-layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l2 8 4-16 2 8h8"/></svg>
+      </span>
+      Sukham
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="/patient/dashboard" class="nav-item">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        Dashboard
+      </a>
+      
+      <a href="/patient/dashboard?tab=settings" class="nav-item">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </a>
+
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="/patient/logout" class="nav-item" style="color:var(--text-dim);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Log out
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="main-content">
+
+    <div class="topbar">
+      <h2>Profile</h2>
+      <div class="topbar-actions">
+        <div class="avatar-pill">
+          <span class="avatar-circle">{{ patient.name[0]|upper }}</span>
+          {{ patient.name }}
+        </div>
+      </div>
+    </div>
+
+    <div class="d-card">
+      <h1>Your details</h1>
+      <p class="subtitle" style="margin:4px 0 22px;">Registered on {{ patient.created_at }}</p>
+
+      {% if profile_errors %}
+        <ul class="flash-list">
+          {% for err in profile_errors %}<li class="flash error">{{ err }}</li>{% endfor %}
+        </ul>
+      {% endif %}
+      {% if profile_success %}
+        <ul class="flash-list"><li class="flash success">{{ profile_success }}</li></ul>
+      {% endif %}
+
+      <form method="POST" action="/patient/profile/update">
+        <div class="field">
+          <label for="p-name">Full name</label>
+          <input type="text" id="p-name" name="name" value="{{ patient.name }}" required>
+        </div>
+
+        <div class="field">
+          <label for="p-email">Email address</label>
+          <input type="email" id="p-email" value="{{ patient.email }}" disabled>
+        </div>
+
+        <div class="two-col">
+          <div class="field">
+            <label for="p-phone">Phone number</label>
+            <input type="tel" id="p-phone" name="phone" value="{{ patient.phone }}" required>
+          </div>
+          <div class="field">
+            <label for="p-age">Age</label>
+            <input type="number" id="p-age" name="age" min="0" max="120" value="{{ patient.age }}" required>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="p-gender">Gender</label>
+          <select id="p-gender" name="gender" required>
+            <option value="Male" {% if patient.gender == "Male" %}selected{% endif %}>Male</option>
+            <option value="Female" {% if patient.gender == "Female" %}selected{% endif %}>Female</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn">Save changes</button>
+      </form>
+    </div>
+
+  </main>
+</div>
+
+</body>
+</html>

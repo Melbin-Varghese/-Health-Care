@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Adherence Alerts — Sukham</title>
+<link rel="stylesheet" href="/static/css/styleee.css">
+<link rel="stylesheet" href="/static/css/medication.css">
+</head>
+<body class="dashboard-body">
+<div class="dash-layout">
+
+  {% include "_patient_sidebar.html" %}
+
+  <main class="main-content">
+    <div class="topbar">
+      <h2>Prescriptions</h2>
+      <div class="topbar-actions">
+        <div class="avatar-pill">
+          <span class="avatar-circle">{{ patient.name[0]|upper }}</span>
+          {{ patient.name }}
+        </div>
+      </div>
+    </div>
+
+    <nav class="sub-tabs">
+      <a class="sub-tab" href="/patient/dashboard#prescriptions">My prescriptions</a>
+      <a class="sub-tab active" href="/patient/prescriptions/adherence">Adherence alerts</a>
+    </nav>
+
+    {% if stats.low %}
+    <div class="alert-banner">
+      Your adherence is {{ stats.pct }}% — below {{ threshold|int }}%. Please take or confirm your doses on time; your doctor is alerted when this stays low.
+    </div>
+    {% elif stats.pct is not none %}
+    <div class="ok-banner">You're on track — {{ stats.pct }}% adherence over the last {{ days }} days.</div>
+    {% endif %}
+
+    <div class="d-card">
+      <div class="med-head">
+        <h3>My adherence</h3>
+        <div class="sub-tabs" style="margin:0;">
+          {% for d in (7, 14, 30) %}
+          <a class="sub-tab {{ 'active' if d == days }}" href="/patient/prescriptions/adherence?days={{ d }}">{{ d }} days</a>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="stat-grid four">
+        <div class="stat-card">
+          <div class="stat-label">Adherence</div>
+          <div class="stat-value">{{ (stats.pct ~ '%') if stats.pct is not none else 'N/A' }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Taken</div>
+          <div class="stat-value">{{ stats.taken }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Skipped / missed</div>
+          <div class="stat-value">{{ stats.skipped + stats.delayed + stats.missed }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Pending</div>
+          <div class="stat-value">{{ stats.pending }}</div>
+        </div>
+      </div>
+
+      {% if stats.pct is not none %}
+      <div class="adh-track"><div class="adh-fill {{ 'low' if stats.low else 'ok' }}" style="width: {{ stats.pct }}%;"></div></div>
+      <p class="med-sub" style="margin-top:8px;">Alerts trigger below {{ threshold|int }}%. A dose counts as missed if it is still unconfirmed 2 hours after its time.</p>
+      {% else %}
+      <p class="med-empty">No doses have come due yet, so there is nothing to measure.</p>
+      {% endif %}
+    </div>
+
+    {% if by_medication %}
+    <div class="d-card">
+      <h3>By medication</h3>
+      <div class="table-wrap">
+        <table class="med-table">
+          <thead><tr><th>Medication</th><th>Adherence</th><th>Taken</th><th>Skipped</th><th>Missed</th></tr></thead>
+          <tbody>
+            {% for m in by_medication %}
+            <tr>
+              <td>{{ m.drug_name }} <span class="med-sub">· {{ m.dosage }}</span></td>
+              <td>
+                {% if m.pct is not none %}
+                <div class="adh-cell"><span class="adh-pct">{{ m.pct }}%</span>
+                  <div class="adh-track"><div class="adh-fill {{ 'low' if m.low else 'ok' }}" style="width: {{ m.pct }}%;"></div></div></div>
+                {% else %}<span class="med-sub">—</span>{% endif %}
+              </td>
+              <td>{{ m.taken }}</td>
+              <td>{{ m.skipped + m.delayed }}</td>
+              <td>{{ m.missed }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="d-card">
+      <h3>Recent doses</h3>
+      {% if recent %}
+      <div class="table-wrap">
+        <table class="med-table">
+          <thead><tr><th>When</th><th>Medication</th><th>Status</th></tr></thead>
+          <tbody>
+            {% for d in recent %}
+            <tr>
+              <td>{{ d.date }}, {{ d.time }}</td>
+              <td>{{ d.drug_name }} <span class="med-sub">· {{ d.dosage }}</span></td>
+              <td><span class="med-badge {{ d.state }}">{{ d.state|capitalize }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="med-empty">No doses yet.</p>
+      {% endif %}
+    </div>
+
+    <div class="d-card">
+      <h3>Alerts</h3>
+      {% if alerts %}
+        {% for a in alerts %}
+        <div class="list-row">
+          <div class="list-main">
+            <div>
+              <div>Low adherence — {{ a.adherence_pct }}%</div>
+              <div class="list-sub">Over the last {{ a.window_days }} days</div>
+            </div>
+          </div>
+          <span class="med-badge low">{{ a.created_at[:16] }}</span>
+        </div>
+        {% endfor %}
+      {% else %}
+      <p class="med-empty">No alerts. Keep it up!</p>
+      {% endif %}
+    </div>
+  </main>
+</div>
+</body>
+</html>

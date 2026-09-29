@@ -1,0 +1,440 @@
+:root {
+  --bg: #f8f9fc;
+  --bg-alt: #b1c3f8;
+  --card: #a5baf3;
+  --border: #030303;
+  --text: #000000;
+  --text-dim: #0c0c0c;
+  --text-dimmer: #6b7590;
+  --accent: #6d8bf5;
+  --accent-soft: rgba(109, 139, 245, 0.14);
+  --accent-border: rgba(53, 95, 248, 0.35);
+  --pill-bg: rgba(231, 232, 238, 0.12);
+  --pill-text: #e8eaf0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.auth-wrap {
+  width: 100%;
+  max-width: 440px;
+}
+
+
+
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 28px;
+}
+
+.brand-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(109, 139, 245, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 36px;
+}
+
+.card h1 {
+  font-size: 1.4rem;
+  margin: 0 0 6px;
+  letter-spacing: -0.01em;
+}
+
+.card .subtitle {
+  color: var(--text-dim);
+  font-size: 0.92rem;
+  margin: 0 0 26px;
+}
+
+label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+.field { margin-bottom: 18px; }
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="password"],
+select {
+  width: 100%;
+  padding: 11px 14px;
+  background: #f7f8fa;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color .15s ease;
+}
+
+input:focus,
+select:focus {
+  border-color: var(--accent);
+}
+
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa4bd' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+.btn {
+  width: 100%;
+  padding: 12px 20px;
+  border-radius: 8px;
+  border: none;
+  background: var(--accent);
+  color: #0a0e1a;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s ease;
+  margin-top: 6px;
+}
+.btn:hover { background: var(--accent-hover); }
+
+.alt-action {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  margin-top: 22px;
+}
+.alt-action a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+.alt-action a:hover { text-decoration: underline; }
+
+.flash-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px;
+}
+.flash {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  margin-bottom: 8px;
+}
+.flash.error { background: var(--error-bg); color: var(--error); }
+.flash.success { background: var(--success-bg); color: var(--success); }
+
+.dashboard-card p {
+  color: var(--text-dim);
+  line-height: 1.7;
+  font-size: 0.95rem;
+}
+.dashboard-card strong { color: var(--text); }
+
+.logout-link {
+  display: inline-block;
+  margin-top: 22px;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  text-decoration: none;
+  border: 1px solid var(--border);
+  padding: 9px 16px;
+  border-radius: 8px;
+}
+.logout-link:hover { border-color: var(--text-dim); color: var(--text); }
+
+@media (max-width: 480px) {
+  .two-col { grid-template-columns: 1fr; }
+  .card { padding: 26px; }
+}
+/* =========================================================
+   Sidebar dashboard layout (Doctor / Patient)
+   Reuses the same theme tokens defined above.
+   ========================================================= */
+:root {
+  --accent-hover: #7f9bf7;
+  --error-bg: rgba(239,68,68,0.12);
+  --error: #b91c1c;
+  --success-bg: rgba(34,197,94,0.14);
+  --success: #157347;
+}
+
+.dash-layout {
+  display: flex;
+  min-height: 100vh;
+  align-items: stretch;
+}
+
+/* The base `body` rule above (flex + center + padding) is built for the
+   small centered auth card. The dashboard needs the opposite: full width,
+   flush to the left, no vertical centering -- otherwise the whole layout
+   re-centers (and the sidebar appears to "jump") every time a section
+   with different content height is shown. */
+body.dashboard-body {
+  display: block;
+  padding: 0;
+  min-height: 100vh;
+}
+
+body.dashboard-body .dash-layout {
+  min-height: 100vh;
+  align-items: stretch;
+}
+
+.sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  background: var(--card);
+  border-right: 1px solid var(--border);
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.sidebar .brand { padding-left: 8px; margin-bottom: 26px; }
+
+.sidebar-nav { display: flex; flex-direction: column; gap: 3px; }
+
+.nav-section-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dimmer);
+  margin: 20px 0 8px 14px;
+}
+.nav-section-label:first-of-type { margin-top: 4px; }
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  color: var(--text-dim);
+  font-weight: 600;
+  font-size: 0.92rem;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  text-decoration: none;
+  font-family: inherit;
+  transition: background .15s ease, color .15s ease;
+}
+.nav-item svg { flex-shrink: 0; }
+.nav-item:hover { background: rgba(255,255,255,0.55); color: var(--text); }
+.nav-item.active { background: var(--accent); color: #0a0e1a; }
+
+.sidebar-footer { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--border); }
+
+.main-content { flex: 1; padding: 32px 40px 60px; max-width: 1000px; }
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 30px;
+  gap: 16px;
+}
+
+.topbar h2 { font-size: 1.5rem; }
+
+.topbar-actions { display: flex; align-items: center; gap: 10px; }
+
+.icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  color: var(--text-dim);
+}
+.icon-btn:hover { border-color: var(--text-dimmer); color: var(--text); }
+
+.badge-dot {
+  position: absolute;
+  top: 6px;
+  right: 7px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  border: 1.5px solid var(--card);
+}
+
+.avatar-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 6px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.avatar-circle {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #0a0e1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.content-section { display: none; }
+.content-section.active { display: block; }
+
+.d-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 28px 30px;
+  margin-bottom: 20px;
+}
+.d-card h1 { font-size: 1.3rem; margin-bottom: 4px; }
+.d-card h3 { font-size: 1.05rem; margin-bottom: 14px; }
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+.stat-card .stat-label {
+  color: var(--text-dimmer);
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.stat-card .stat-value { font-size: 1.4rem; font-weight: 700; margin-top: 6px; }
+.stat-card .stat-value span { font-size: 0.85rem; color: var(--text-dim); font-weight: 500; }
+
+.placeholder-card {
+  border: 1.5px dashed var(--border);
+  border-radius: 14px;
+  padding: 48px 30px;
+  text-align: center;
+  color: var(--text-dimmer);
+}
+.placeholder-card svg { color: var(--accent); margin-bottom: 14px; }
+.placeholder-card h3 { color: var(--text); margin-bottom: 8px; }
+.placeholder-card p { font-size: 0.92rem; max-width: 360px; margin: 0 auto; }
+
+.list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 4px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.92rem;
+}
+.list-row:last-child { border-bottom: none; }
+.list-row .list-main { display: flex; align-items: center; gap: 12px; }
+.list-row .list-icon {
+  width: 34px; height: 34px; border-radius: 9px;
+  background: var(--accent-soft); color: var(--accent);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.list-row .list-sub { color: var(--text-dimmer); font-size: 0.82rem; }
+.list-row .list-tag {
+  font-size: 0.76rem; font-weight: 600; padding: 4px 10px; border-radius: 999px;
+  background: var(--pill-bg); color: var(--pill-text);
+  white-space: nowrap;
+}
+
+.map-tabs { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+.map-tab {
+  padding: 9px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.map-tab.active { background: var(--accent); color: #0a0e1a; border-color: transparent; }
+.map-frame-wrap {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  height: 440px;
+}
+.map-frame-wrap iframe { width: 100%; height: 100%; border: 0; display: block; }
+.map-status { font-size: 0.85rem; color: var(--text-dimmer); margin-bottom: 12px; }
+
+@media (max-width: 900px) {
+  .dash-layout { flex-direction: column; }
+  .sidebar { width: 100%; height: auto; position: relative; flex-direction: row; overflow-x: auto; padding: 14px 12px; }
+  .sidebar .brand { display: none; }
+  .sidebar-nav { flex-direction: row; }
+  .nav-section-label { display: none; }
+  .sidebar-footer { margin-top: 0; border-top: none; }
+  .main-content { padding: 24px 20px 50px; }
+  .stat-grid { grid-template-columns: 1fr; }
+}

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Doctor Register — Sukham</title>
+<link rel="stylesheet" href="/static/css/stylee.css">
+</head>
+<body>
+  <div class="auth-wrap">
+    <div class="brand">
+      <span class="brand-mark">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l2 8 4-16 2 8h8"/></svg>
+      </span>
+      Sukham
+    </div>
+
+    <div class="card">
+      <h1>Doctor registration</h1>
+      <p class="subtitle">Create an account to manage patients, appointments and records.</p>
+
+      
+          
+
+      <form method="POST" action="/doctor/register">
+        <div class="field">
+          <label for="name">Full name</label>
+          <input type="text" id="name" name="name" placeholder="Dr. Anitha Menon">
+                 
+        </div>
+
+        <div class="field">
+          <label for="email">Email address</label>
+          <input type="email" id="email" name="email" placeholder="doctor@example.com">
+                 
+        </div>
+
+        <div class="field">
+          <label for="phone">Phone number</label>
+          <input type="tel" id="phone" name="phone" placeholder="+91 98765 43210">
+                
+        </div>
+
+        <div class="field">
+          <label for="department">Department</label>
+          <select id="department" name="department" required>
+            <option value="" disabled {% if not form.department %}selected{% endif %}>Select a department</option>
+            {% for dept in departments %}
+              <option value="{{ dept }}" {% if form.department == dept %}selected{% endif %}>{{ dept }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="two-col">
+          <div class="field">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="At least 6 characters" required>
+          </div>
+          <div class="field">
+            <label for="confirm_password">Confirm password</label>
+            <input type="password" id="confirm_password" name="confirm_password" placeholder="Re-enter password" required>
+          </div>
+        </div>
+
+        <button type="submit" class="btn">Register</button>
+      </form>
+
+      <div class="alt-action">
+        Already have an account? <a href="/doctor/login">Log in</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

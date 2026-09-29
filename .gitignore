@@ -216,3 +216,29 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Virtual environment
+venv/
+.venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Secrets
+.env
+
+# Local database
+*.db
+
+# Machine learning model files
+services/*.h5
+services/*.hdf5
+services/*.keras
+services/*.pt
+services/*.pth
+services/*.onnx
+services/*.pkl
+services/*.joblib
+services/*.pb
+services/*.tflite

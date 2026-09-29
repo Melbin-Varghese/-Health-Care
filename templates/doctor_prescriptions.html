@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prescriptions — Sukham</title>
+<link rel="stylesheet" href="/static/css/styleee.css">
+<link rel="stylesheet" href="/static/css/medication.css">
+</head>
+<body class="dashboard-body">
+<div class="dash-layout">
+
+  {% set nav_active = 'prescriptions' %}
+  {% include "_doctor_sidebar.html" %}
+
+  <main class="main-content">
+    <div class="topbar">
+      <h2>Prescriptions</h2>
+      <div class="topbar-actions">
+        <div class="avatar-pill">
+          <span class="avatar-circle">{{ doctor.name[0]|upper }}</span>
+          Dr. {{ doctor.name }}
+        </div>
+      </div>
+    </div>
+
+    <nav class="sub-tabs">
+      <a class="sub-tab active" href="/doctor/prescriptions">Add medication</a>
+      <a class="sub-tab" href="/doctor/prescriptions/adherence">Adherence alerts</a>
+    </nav>
+
+    {% if added %}
+    <ul class="flash-list"><li class="flash success">{{ added }} prescribed. Reminders will start with the next dose.</li></ul>
+    {% endif %}
+    {% if errors %}
+    <ul class="flash-list">{% for e in errors %}<li class="flash error">{{ e }}</li>{% endfor %}</ul>
+    {% endif %}
+
+    <div class="d-card">
+      <h1>Prescribe a new medication</h1>
+      <p class="med-hint">The patient gets a reminder at every dose time below and can confirm each dose from their dashboard.</p>
+
+      {% if not patients %}
+        <p class="med-empty">No patients are registered yet. Once a patient signs up, they will appear here.</p>
+      {% else %}
+      <form method="post" action="/doctor/prescriptions/add" id="med-form">
+
+        <div class="field">
+          <label for="patient_id">Patient</label>
+          <select id="patient_id" name="patient_id" required>
+            <option value="" disabled {{ 'selected' if not form.get('patient_id') }}>Select a patient</option>
+            {% for p in patients %}
+            <option value="{{ p.id }}" {{ 'selected' if form.get('patient_id') == p.id }}>{{ p.name }} · {{ p.age }} yrs · {{ p.gender }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="three-col">
+          <div class="field">
+            <label for="drug_name">Drug name</label>
+            <input type="text" id="drug_name" name="drug_name" maxlength="150" placeholder="e.g. Metformin" value="{{ form.get('drug_name', '') }}" required>
+          </div>
+          <div class="field">
+            <label for="dosage">Dosage</label>
+            <input type="text" id="dosage" name="dosage" maxlength="50" placeholder="e.g. 500mg" value="{{ form.get('dosage', '') }}" required>
+          </div>
+          <div class="field">
+            <label for="frequency">Frequency</label>
+            <select id="frequency" name="frequency" required>
+              {% for f in frequencies %}
+              <option value="{{ f }}" {{ 'selected' if (form.get('frequency') or 'Twice daily') == f }}>{{ f }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="field">
+            <label for="start_date">Start date</label>
+            <input type="date" id="start_date" name="start_date" value="{{ form.get('start_date') or today }}" required>
+          </div>
+          <div class="field">
+            <label for="end_date">End date (optional)</label>
+            <input type="date" id="end_date" name="end_date" value="{{ form.get('end_date', '') }}">
+          </div>
+        </div>
+
+        <div class="field" style="max-width:220px;">
+          <label for="dose_count">Doses per day</label>
+          <select id="dose_count">
+            {% for n in range(1, 7) %}
+            <option value="{{ n }}" {{ 'selected' if dose_times|length == n }}>{{ n }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Reminder times</label>
+          <div class="time-grid" id="time-grid">
+            {% for t in dose_times %}
+            <div><label>Dose {{ loop.index }}</label><input type="time" name="dose_times" value="{{ t }}" required></div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="med-form-actions">
+          <button class="btn" type="submit">Add medication</button>
+        </div>
+      </form>
+      {% endif %}
+    </div>
+
+    <div class="d-card">
+      <div class="med-head">
+        <h3>Recently prescribed</h3>
+        <a class="med-link" href="/doctor/dashboard#records">View all in Records</a>
+      </div>
+      {% if prescriptions %}
+      <div class="table-wrap">
+        <table class="med-table">
+          <thead><tr><th>Patient</th><th>Medication</th><th>Times</th><th>Course</th></tr></thead>
+          <tbody>
+            {% for m in prescriptions %}
+            <tr>
+              <td>{{ m.patient_name }}</td>
+              <td>{{ m.drug_name }} <span class="med-sub">· {{ m.dosage }} · {{ m.frequency }}</span></td>
+              <td>{{ m.times|times12 }}</td>
+              <td class="nowrap">{{ m.start_date }} → {{ m.end_date or 'ongoing' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="med-empty">Nothing prescribed yet.</p>
+      {% endif %}
+    </div>
+  </main>
+</div>
+
+<script>
+  // Keep the number of time inputs in step with "Doses per day".
+  const PRESETS = {
+    1: ['08:00'],
+    2: ['08:00', '20:00'],
+    3: ['08:00', '14:00', '20:00'],
+    4: ['06:00', '12:00', '18:00', '22:00'],
+    5: ['06:00', '10:00', '14:00', '18:00', '22:00'],
+    6: ['06:00', '10:00', '14:00', '18:00', '21:00', '23:00']
+  };
+  const FREQ_BY_COUNT = { 1: 'Once daily', 2: 'Twice daily', 3: 'Three times daily', 4: 'Four times daily' };
+  const SYNCED = Object.values(FREQ_BY_COUNT);
+
+  const grid = document.getElementById('time-grid');
+  const countSel = document.getElementById('dose_count');
+  const freqSel = document.getElementById('frequency');
+
+  if (grid && countSel) {
+    let lastCount = parseInt(countSel.value, 10);
+    countSel.addEventListener('change', () => {
+      const n = parseInt(countSel.value, 10);
+      const old = Array.from(grid.querySelectorAll('input')).map(i => i.value);
+      // Untouched times -> switch to the preset for the new count.
+      // Edited times -> keep them and fill extra rows with unused preset times.
+      const untouched = JSON.stringify(old) === JSON.stringify(PRESETS[lastCount]);
+      let values;
+      if (untouched) {
+        values = PRESETS[n].slice();
+      } else {
+        values = old.slice(0, n);
+        for (const t of PRESETS[n]) { if (values.length < n && !values.includes(t)) values.push(t); }
+        for (const t of PRESETS[6]) { if (values.length < n && !values.includes(t)) values.push(t); }
+      }
+      grid.innerHTML = '';
+      values.forEach((v, i) => {
+        const wrap = document.createElement('div');
+        wrap.innerHTML = '<label>Dose ' + (i + 1) + '</label><input type="time" name="dose_times" required>';
+        wrap.querySelector('input').value = v;
+        grid.appendChild(wrap);
+      });
+      if (FREQ_BY_COUNT[n] && SYNCED.includes(freqSel.value)) freqSel.value = FREQ_BY_COUNT[n];
+      lastCount = n;
+    });
+  }
+</script>
+</body>
+</html>

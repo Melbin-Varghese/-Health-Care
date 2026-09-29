@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard — Sukham</title>
+<link rel="stylesheet" href="/static/css/styleee.css">
+<link rel="stylesheet" href="/static/css/medication.css">
+</head>
+<body class="dashboard-body">
+
+<div class="dash-layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l2 8 4-16 2 8h8"/></svg>
+      </span>
+      Sukham
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-target="dashboard">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        Dashboard
+      </button>
+      <button class="nav-item" data-target="appointments">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        Appointments
+      </button>
+      <button class="nav-item" data-target="reports">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Reports
+      </button>
+      <button class="nav-item" data-target="prescriptions">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 15h6M9 11h6"/><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Prescriptions
+      </button>
+      <button class="nav-item" data-target="vitals">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        Vitals
+      </button>
+      <button class="nav-item" data-target="messages">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v14H7l-3 3V4z"/></svg>
+        Messages
+      </button>
+      <button class="nav-item" data-target="nearby">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Nearby Care
+      </button>
+      <a href="/patient/profile" class="nav-item">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round">
+         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+         <circle cx="12" cy="7" r="4"/>
+         </svg>
+         Profile
+      </a>
+      <button class="nav-item" data-target="messages">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v14H7l-3 3V4z"/></svg>
+        Messages
+      </button>
+      
+      <button class="nav-item" data-target="settings">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="/patient/logout" class="nav-item" style="color:var(--text-dim);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Log out
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="main-content">
+
+    <div class="topbar">
+      <h2>Welcome,  patient name</h2>
+      <div class="topbar-actions">
+        <button class="icon-btn" title="Notifications">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="badge-dot"></span>
+        </button>
+        <button class="icon-btn" title="Messages">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v14H7l-3 3V4z"/></svg>
+        </button>
+        <div class="avatar-pill">
+          <span class="avatar-circle"></span>
+          {{ patient.name }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Dashboard overview -->
+    <section class="content-section active" id="dashboard">
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">Blood pressure</div>
+          <div class="stat-value">118/76 <span>mmHg</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Resting heart rate</div>
+          <div class="stat-value">72 <span>bpm</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Next appointment</div>
+          <div class="stat-value" style="font-size:1.05rem;">Dr. Manu <span>· Thu, 10:30 AM</span></div>
+        </div>
+      </div>
+
+      
+    </section>
+
+    <!-- Profile -->
+    <section class="content-section" id="profile">
+      <div class="d-card">
+        <h1>Profile</h1>
+        <p><strong>Name:</strong> {{ patient.name }}</p>
+        <p><strong>Email:</strong> {{ patient.email }}</p>
+        <p><strong>Phone:</strong> {{ patient.phone }}</p>
+        <p><strong>Age:</strong> {{ patient.age }}</p>
+        <p><strong>Gender:</strong> {{ patient.gender }}</p>
+        <p><strong>Registered on:</strong> {{ patient.created_at }}</p>
+      </div>
+    </section>
+
+    <!-- Messages -->
+    <section class="content-section" id="messages">
+      <div class="d-card">
+        <h3>Messages</h3>
+        <div class="list-row">
+          <div class="list-main">
+            <span class="list-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+            <div><div>Dr. Manu</div><div class="list-sub">Your latest report looks good, keep it up.</div></div>
+          </div>
+          <span class="list-tag">3h ago</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Notifications -->
+    <section class="content-section" id="notifications">
+      <div class="d-card">
+        <h3>Notifications</h3>
+        <div class="list-row">
+          <div class="list-main">
+            <span class="list-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+            <div><div>Appointment reminder</div><div class="list-sub">Dr. Manu · Thu, 10:30 AM</div></div>
+          </div>
+          <span class="list-tag">2 days</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Settings -->
+    <section class="content-section" id="settings">
+      <div class="d-card">
+        <h1>Settings</h1>
+        <div class="field">
+          <label>Email notifications</label>
+          <label style="display: flex; gap: 8px; align-items: center; font-weight: 400; margin-top: 8px;">
+            <input type="checkbox" checked>
+            Receive appointment reminders
+          </label>
+          <label style="display: flex; gap: 8px; align-items: center; font-weight: 400; margin-top: 8px;">
+            <input type="checkbox" checked>
+            Receive health tips
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- Vitals -->
+    <section class="content-section" id="vitals">
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">Blood pressure</div>
+          <div class="stat-value">118/76 <span>mmHg</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Heart rate</div>
+          <div class="stat-value">72 <span>bpm</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Blood sugar</div>
+          <div class="stat-value">96 <span>mg/dL</span></div>
+        </div>
+      </div>
+      <div class="placeholder-card">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        <h3>Vitals trends</h3>
+        <p>Charts tracking your vitals over time will appear here.</p>
+      </div>
+    </section>
+
+    <!-- Appointments -->
+    <section class="content-section" id="appointments">
+      <div class="d-card">
+        <h3>Upcoming appointments</h3>
+        <div class="list-row">
+          <div class="list-main">
+            <span class="list-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+            <div><div>Dr. Manu</div><div class="list-sub">Thu, 10:30 AM · Follow-up</div></div>
+          </div>
+          <span class="list-tag">Confirmed</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Reports -->
+    <section class="content-section" id="reports">
+      <div class="placeholder-card">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <h3>Reports</h3>
+        <p>Lab reports, scans and other documents shared by your doctor will appear here.</p>
+      </div>
+    </section>
+
+    <!-- Prescriptions: medicines + consume verification -->
+    <section class="content-section" id="prescriptions">
+
+      <nav class="sub-tabs">
+        <a class="sub-tab active" href="/patient/dashboard#prescriptions">My prescriptions</a>
+        <a class="sub-tab" href="/patient/prescriptions/adherence">Adherence alerts{% if adherence.low %} ⚠{% endif %}</a>
+      </nav>
+
+      {% if adherence.low %}
+      <div class="alert-banner">
+        Your adherence this week is {{ adherence.pct }}%. <a href="/patient/prescriptions/adherence">See details</a>
+      </div>
+      {% endif %}
+
+      <div class="d-card">
+        <h3>Today's doses</h3>
+        {% if todays_doses %}
+        <div class="table-wrap">
+          <table class="med-table">
+            <thead><tr><th>Time</th><th>Medication</th><th>Status</th><th>Did you take it?</th></tr></thead>
+            <tbody>
+              {% for d in todays_doses %}
+              <tr class="{{ 'row-due' if d.state == 'due' }}">
+                <td>{{ d.time }}</td>
+                <td>{{ d.drug_name }} <span class="med-sub">· {{ d.dosage }}</span></td>
+                <td>
+                  {% if d.state == 'due' %}<span class="med-badge due">Due now</span>
+                  {% else %}<span class="med-badge {{ d.state }}">{{ d.state|capitalize }}</span>{% endif %}
+                </td>
+                <td>
+                  {% if d.can_respond %}
+                  <div class="verify-cell">
+                    <form method="post" action="/patient/doses/{{ d.id }}/respond">
+                      <input type="hidden" name="status" value="taken">
+                      <button type="submit" class="med-btn primary sm">✔ Taken</button>
+                    </form>
+                    <form method="post" action="/patient/doses/{{ d.id }}/respond">
+                      <input type="hidden" name="status" value="skipped">
+                      <button type="submit" class="med-btn sm">Skip</button>
+                    </form>
+                  </div>
+                  {% else %}<span class="med-sub">—</span>{% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="med-empty">No doses scheduled for today.</p>
+        {% endif %}
+      </div>
+
+      <div class="d-card">
+        <h3>Prescribed medications</h3>
+        {% if medications %}
+        <div class="table-wrap">
+          <table class="med-table">
+            <thead><tr><th>Medication</th><th>Dosage</th><th>Frequency</th><th>Reminder times</th><th>Course</th><th>Prescribed by</th><th>Status</th></tr></thead>
+            <tbody>
+              {% for m in medications %}
+              <tr>
+                <td>{{ m.drug_name }}</td>
+                <td>{{ m.dosage }}</td>
+                <td>{{ m.frequency }}</td>
+                <td>{{ m.times|times12 }}</td>
+                <td class="nowrap">{{ m.start_date }} → {{ m.end_date or 'ongoing' }}</td>
+                <td>Dr. {{ m.doctor_name }}</td>
+                <td>{% if m.is_active %}<span class="med-badge active">Active</span>{% else %}<span class="med-badge done">Completed</span>{% endif %}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="med-empty">Prescriptions written by your doctor will be listed here.</p>
+        {% endif %}
+      </div>
+    </section>
+
+    <!-- Nearby care (Google Maps) -->
+    <section class="content-section" id="nearby">
+      <div class="d-card">
+        <h3>Nearby care</h3>
+        <div class="map-tabs">
+          <button class="map-tab active" data-type="pharmacy">Medical store</button>
+          <button class="map-tab" data-type="hospital">Hospital</button>
+          <button class="map-tab" data-type="clinic">Clinic</button>
+          <button class="map-tab" data-type="doctor">Doctor</button>
+        </div>
+        <p class="map-status" id="map-status">
+          Getting your location…
+          <button type="button" id="retry-location" class="nav-item" style="display:none; width:auto; padding:4px 12px; margin-left:8px; border:1px solid var(--border); font-size:0.8rem;">Use my location</button>
+        </p>
+        <div class="map-frame-wrap">
+          <iframe id="nearby-map" title="Nearby care map" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  // Sidebar navigation
+  const navItems = document.querySelectorAll('.nav-item[data-target]');
+  const sections = document.querySelectorAll('.content-section');
+  navItems.forEach(item => {
+    item.addEventListener('click', () => {
+      navItems.forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      sections.forEach(s => s.classList.remove('active'));
+      document.getElementById(item.dataset.target).classList.add('active');
+    });
+  });
+
+  // Deep links such as /patient/dashboard#prescriptions
+  function openFromHash() {
+    const tab = location.hash && document.querySelector('.nav-item[data-target="' + location.hash.slice(1) + '"]');
+    if (tab) tab.click();
+  }
+  window.addEventListener('hashchange', openFromHash);
+  openFromHash();
+
+  // Nearby care map
+  const mapFrame = document.getElementById('nearby-map');
+  const mapStatus = document.getElementById('map-status');
+  const mapTabs = document.querySelectorAll('.map-tab');
+  let currentType = 'pharmacy';
+  let userCoords = null;
+
+  function buildMapUrl(type) {
+    const query = encodeURIComponent(type + ' near me');
+    if (userCoords) {
+      return `https://maps.google.com/maps?q=${query}&ll=${userCoords.lat},${userCoords.lng}&z=14&output=embed`;
+    }
+    return `https://maps.google.com/maps?q=${query}&z=13&output=embed`;
+  }
+
+  function loadMap(type) {
+    currentType = type;
+    mapFrame.src = buildMapUrl(type);
+  }
+
+  mapTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      mapTabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      loadMap(tab.dataset.type);
+    });
+  });
+
+  const retryBtn = document.getElementById('retry-location');
+
+  function fetchLocation() {
+    if (!navigator.geolocation) {
+      mapStatus.firstChild.textContent = 'Location is not available on this device — showing general results. ';
+      loadMap(currentType);
+      return;
+    }
+
+    if (!window.isSecureContext) {
+      mapStatus.firstChild.textContent =
+        'Live location needs a secure connection (https, or 127.0.0.1 / localhost on this device) — showing general results. ';
+      loadMap(currentType);
+      return;
+    }
+
+    mapStatus.firstChild.textContent = 'Getting your location… ';
+    retryBtn.style.display = 'none';
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        userCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        mapStatus.firstChild.textContent = 'Showing results near your current location. ';
+        retryBtn.style.display = 'none';
+        loadMap(currentType);
+      },
+      (err) => {
+        let msg = 'Showing general results. ';
+        if (err.code === err.PERMISSION_DENIED) {
+          msg = 'Location access denied — allow location for this site in your browser, then tap "Use my location". ';
+        } else if (err.code === err.POSITION_UNAVAILABLE) {
+          msg = 'Could not determine your location right now — showing general results. ';
+        } else if (err.code === err.TIMEOUT) {
+          msg = 'Location request timed out — showing general results. ';
+        }
+        mapStatus.firstChild.textContent = msg;
+        retryBtn.style.display = 'inline-block';
+        loadMap(currentType);
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+    );
+  }
+
+  retryBtn.addEventListener('click', fetchLocation);
+  fetchLocation();
+</script>
+
+</body>
+</html>

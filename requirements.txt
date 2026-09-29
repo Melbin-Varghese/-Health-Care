@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+jinja2
+itsdangerous
+httpx
+python-multipart
+pillow
+numpy
+tensorflow
+apscheduler

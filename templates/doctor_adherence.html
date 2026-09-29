@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Adherence Alerts — Sukham</title>
+<link rel="stylesheet" href="/static/css/styleee.css">
+<link rel="stylesheet" href="/static/css/medication.css">
+</head>
+<body class="dashboard-body">
+<div class="dash-layout">
+
+  {% set nav_active = 'prescriptions' %}
+  {% include "_doctor_sidebar.html" %}
+
+  <main class="main-content">
+    <div class="topbar">
+      <h2>Prescriptions</h2>
+      <div class="topbar-actions">
+        <div class="avatar-pill">
+          <span class="avatar-circle">{{ doctor.name[0]|upper }}</span>
+          Dr. {{ doctor.name }}
+        </div>
+      </div>
+    </div>
+
+    <nav class="sub-tabs">
+      <a class="sub-tab" href="/doctor/prescriptions">Add medication</a>
+      <a class="sub-tab active" href="/doctor/prescriptions/adherence">Adherence alerts</a>
+    </nav>
+
+    {% if low_count %}
+    <div class="alert-banner">
+      {{ low_count }} patient{{ 's are' if low_count != 1 else ' is' }} below {{ threshold|int }}% adherence over the last {{ days }} days.
+    </div>
+    {% elif rows %}
+    <div class="ok-banner">All monitored patients are at or above {{ threshold|int }}% adherence.</div>
+    {% endif %}
+
+    <div class="d-card">
+      <div class="med-head">
+        <h3>Patient adherence</h3>
+        <div class="sub-tabs" style="margin:0;">
+          {% for d in (7, 14, 30) %}
+          <a class="sub-tab {{ 'active' if d == days }}" href="/doctor/prescriptions/adherence?days={{ d }}">{{ d }} days</a>
+          {% endfor %}
+        </div>
+      </div>
+
+      {% if rows %}
+      <div class="table-wrap">
+        <table class="med-table">
+          <thead>
+            <tr><th>Patient</th><th>Adherence</th><th>Taken</th><th>Skipped</th><th>Missed</th><th>Pending</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody>
+            {% for r in rows %}
+            {% set s = r.stats %}
+            <tr>
+              <td>{{ r.patient.name }} <span class="med-sub">· {{ r.patient.age }} yrs</span></td>
+              <td>
+                {% if s.pct is not none %}
+                <div class="adh-cell">
+                  <span class="adh-pct">{{ s.pct }}%</span>
+                  <div class="adh-track"><div class="adh-fill {{ 'low' if s.low else 'ok' }}" style="width: {{ s.pct }}%;"></div></div>
+                </div>
+                {% else %}<span class="med-sub">—</span>{% endif %}
+              </td>
+              <td>{{ s.taken }}</td>
+              <td>{{ s.skipped + s.delayed }}</td>
+              <td>{{ s.missed }}</td>
+              <td>{{ s.pending }}</td>
+              <td>
+                {% if s.pct is none %}<span class="med-badge none">No data yet</span>
+                {% elif s.low %}<span class="med-badge low">Low — alert</span>
+                {% else %}<span class="med-badge ok">On track</span>{% endif %}
+              </td>
+              <td><a class="med-link" href="/doctor/prescriptions?patient_id={{ r.patient.id }}">Prescribe</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p class="med-sub" style="margin-top:12px;">
+        Adherence = taken ÷ (taken + skipped + missed). A dose counts as missed if it is still unconfirmed 2 hours after its time.
+      </p>
+      {% else %}
+      <p class="med-empty">You haven't prescribed any medication yet, so there is nothing to track.</p>
+      {% endif %}
+    </div>
+
+    <div class="d-card">
+      <h3>Alerts raised</h3>
+      {% if alerts %}
+        {% for a in alerts %}
+        <div class="list-row">
+          <div class="list-main">
+            <div>
+              <div>{{ a.patient_name }} — {{ a.adherence_pct }}% adherence</div>
+              <div class="list-sub">Over the last {{ a.window_days }} days, below {{ threshold|int }}%</div>
+            </div>
+          </div>
+          <span class="med-badge low">{{ a.created_at[:16] }}</span>
+        </div>
+        {% endfor %}
+      {% else %}
+      <p class="med-empty">No low-adherence alerts so far.</p>
+      {% endif %}
+    </div>
+  </main>
+</div>
+</body>
+</html>

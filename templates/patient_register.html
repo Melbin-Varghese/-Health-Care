@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Patient Register — Sukham</title>
+  <link rel="stylesheet" href="/static/css/stylee.css">
+</head>
+
+<body>
+
+  <div class="auth-wrap">
+
+    <div class="brand">
+      <span class="brand-mark">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 12h4l2 8 4-16 2 8h8"/>
+        </svg>
+      </span>
+      Sukham
+    </div>
+
+    <div class="card">
+
+      <h1>Patient registration</h1>
+
+      <p class="subtitle">
+        Create an account to track your vitals, appointments and reports.
+      </p>
+
+      <!-- Error messages -->
+      {% if errors %}
+        <div class="form-errors">
+          {% for error in errors %}
+            <p>{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <form method="POST" action="/patient/register">
+
+        <!-- Name -->
+        <div class="field">
+          <label for="name">Full name</label>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            placeholder="Priya Ramesh"
+            value="{{ form.name or '' }}"
+            required
+          >
+        </div>
+
+        <!-- Email -->
+        <div class="field">
+          <label for="email">Email address</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            placeholder="patient@example.com"
+            value="{{ form.email or '' }}"
+            required
+          >
+        </div>
+
+        <!-- Phone -->
+        <div class="field">
+          <label for="phone">Phone number</label>
+          <input
+            type="tel"
+            id="phone"
+            name="phone"
+            placeholder="+91 98765 43210"
+            value="{{ form.phone or '' }}"
+            required
+          >
+        </div>
+
+        <!-- Age + Gender -->
+        <div class="two-col">
+
+          <div class="field">
+            <label for="age">Age</label>
+            <input
+              type="number"
+              id="age"
+              name="age"
+              min="0"
+              max="120"
+              placeholder="28"
+              value="{{ form.age or '' }}"
+              required
+            >
+          </div>
+
+          <div class="field">
+            <label for="gender">Gender</label>
+
+            <select id="gender" name="gender" required>
+
+              <option value="" disabled
+                {% if not form.gender %}selected{% endif %}>
+                Select gender
+              </option>
+
+              {% for g in genders %}
+                <option value="{{ g }}"
+                  {% if form.gender == g %}selected{% endif %}>
+                  {{ g }}
+                </option>
+              {% endfor %}
+
+            </select>
+          </div>
+
+        </div>
+
+        <!-- Password + Confirm Password -->
+        <div class="two-col">
+
+          <div class="field">
+            <label for="password">Password</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              placeholder="At least 6 characters"
+              required
+            >
+          </div>
+
+          <div class="field">
+            <label for="confirm_password">Confirm password</label>
+            <input
+              type="password"
+              id="confirm_password"
+              name="confirm_password"
+              placeholder="Re-enter password"
+              required
+            >
+          </div>
+
+        </div>
+
+        <button type="submit" class="btn">
+          Register
+        </button>
+
+      </form>
+
+      <div class="alt-action">
+        Already have an account?
+        <a href="/patient/login">Log in</a>
+      </div>
+
+    </div>
+
+  </div>
+
+</body>
+</html>

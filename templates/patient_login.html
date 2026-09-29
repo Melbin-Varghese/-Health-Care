@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Patient Login — Sukham</title>
+<link rel="stylesheet" href="/static/css/stylee.css">
+</head>
+<body>
+  <div class="auth-wrap">
+    
+    <div class="brand">
+      <span class="brand-mark">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l2 8 4-16 2 8h8"/></svg>
+      </span>
+      Sukham
+    </div>
+
+    <div class="card">
+      <h1>Patient login</h1>
+      <p class="subtitle">Log in to view your vitals, appointments and reports.</p>
+
+      
+        
+     
+
+      <form method="POST" action="/patient/login">
+        <div class="field">
+          <label for="email">Email address</label>
+          <input type="email" id="email" name="email" placeholder="patient@example.com">
+                 
+        </div>
+
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" placeholder="Your password" required>
+        </div>
+
+        <button type="submit" class="btn">Log in</button>
+      </form>
+
+      <div class="alt-action">
+        Don't have an account? <a href="/patient/register">Register</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
