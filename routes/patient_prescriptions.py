@@ -19,7 +19,7 @@ router = APIRouter(prefix="/patient", tags=["patient-prescriptions"])
 
 @router.post("/doses/{log_id}/respond")
 def respond_to_dose(log_id: int, status: str = Form(...), patient=Depends(require_patient)):
-    if status not in ("taken", "skipped"):
+    if status not in ("taken", "skipped", "missed"):
         raise HTTPException(status_code=400, detail="Invalid status")
 
     dose = crud.get_dose(log_id)
@@ -28,17 +28,32 @@ def respond_to_dose(log_id: int, status: str = Form(...), patient=Depends(requir
         raise HTTPException(status_code=404, detail="Dose not found")
 
     at = svc.now()
-    # ...and only once the dose is actually due (not tomorrow's).
-    if svc.parse(dose["scheduled_for"]) <= at:
-        if crud.update_dose_status(log_id, status, svc.fmt(at)):
-            svc.check_adherence_and_alert(patient["id"], at)
+    # Only today's doses can be marked (not tomorrow's).
+    if svc.parse(dose["scheduled_for"]).date() != at.date():
+        raise HTTPException(status_code=400, detail="Only today's doses can be marked")
+
+    try:
+        saved = crud.update_dose_status(log_id, status, svc.fmt(at))
+    except Exception as exc:  # noqa: BLE001
+        # If the dose_logs table has a CHECK that rejects 'missed', record it as
+        # 'skipped' -- adherence treats both the same way.
+        if status != "missed":
+            raise
+        print(f"[DOSE] could not store 'missed' ({exc}); storing 'skipped' instead", flush=True)
+        saved = crud.update_dose_status(log_id, "skipped", svc.fmt(at))
+
+    if saved:
+        if status in ("missed", "skipped"):
+            svc.send_missed_dose_alert(patient["id"], dose["scheduled_for"])
+        # Recalculate adherence and raise the doctor alert if it dropped below the threshold.
+        svc.check_adherence_and_alert(patient["id"], at)
 
     return RedirectResponse(url="/patient/dashboard#prescriptions", status_code=303)
 
 
 @router.get("/prescriptions/adherence", response_class=HTMLResponse)
-def adherence_alerts(request: Request, days: int = 14, patient=Depends(require_patient)):
-    days = days if days in (7, 14, 30) else 14
+def adherence_alerts(request: Request, days: int = 7, patient=Depends(require_patient)):
+    days = days if days in (7, 14, 30) else 7
     at = svc.now()
     return templates.TemplateResponse(
         request,

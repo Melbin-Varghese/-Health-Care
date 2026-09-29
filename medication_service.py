@@ -63,7 +63,7 @@ def decorate_doses(rows, at: datetime | None = None):
         d["state"] = dose_state(d["status"], d["scheduled_for"], at)
         d["time"] = parse(d["scheduled_for"]).strftime("%I:%M %p").lstrip("0")
         d["date"] = parse(d["scheduled_for"]).strftime("%d %b")
-        d["can_respond"] = d["state"] in ("due", "missed")
+        d["can_respond"] = d["status"] == "pending"   # any unanswered dose can be marked
         out.append(d)
     return out
 
@@ -158,6 +158,11 @@ def send_reminder(dose) -> None:
 def send_low_adherence_alert(patient_id: int, pct: float) -> None:
     print(f"[DOCTOR ALERT] patient {patient_id} at {pct}% adherence over the last "
           f"{ALERT_WINDOW_DAYS} days.", flush=True)
+
+
+def send_missed_dose_alert(patient_id: int, scheduled_for: str) -> None:
+    print(f"[DOCTOR ALERT] patient {patient_id} reported a missed/skipped dose "
+          f"scheduled for {scheduled_for}.", flush=True)
 
 
 def send_due_reminders() -> None:

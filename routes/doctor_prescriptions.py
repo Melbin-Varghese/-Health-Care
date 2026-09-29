@@ -119,8 +119,8 @@ def add_medication(
 
 
 @router.get("/adherence", response_class=HTMLResponse)
-def adherence_alerts(request: Request, days: int = 14, doctor=Depends(require_doctor)):
-    days = days if days in (7, 14, 30) else 14
+def adherence_alerts(request: Request, days: int = 7, doctor=Depends(require_doctor)):
+    days = days if days in (7, 14, 30) else 7
     at = svc.now()
 
     rows = []
@@ -129,6 +129,16 @@ def adherence_alerts(request: Request, days: int = 14, doctor=Depends(require_do
         rows.append({"patient": p, "stats": stats})
     # lowest adherence first; patients with no data yet go last
     rows.sort(key=lambda r: (r["stats"]["pct"] is None, r["stats"]["pct"] or 0))
+
+    # missed / skipped doses reported by (or auto-detected for) this doctor's patients
+    missed_doses = []
+    for r in rows:
+        recent = svc.decorate_doses(crud.list_recent_doses(r["patient"]["id"], svc.fmt(at), 30), at)
+        for d in recent:
+            if d["state"] in ("missed", "skipped"):
+                missed_doses.append({**d, "patient_name": r["patient"]["name"]})
+    missed_doses.sort(key=lambda d: d["scheduled_for"], reverse=True)
+    missed_doses = missed_doses[:20]
 
     return templates.TemplateResponse(
         request,
@@ -140,6 +150,7 @@ def adherence_alerts(request: Request, days: int = 14, doctor=Depends(require_do
             "threshold": svc.LOW_ADHERENCE_THRESHOLD,
             "alerts": crud.list_alerts_for_doctor(doctor["id"]),
             "low_count": sum(1 for r in rows if r["stats"]["low"]),
+            "missed_doses": missed_doses,
             "active_tab": "adherence",
         },
     )

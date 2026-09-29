@@ -237,33 +237,48 @@
       {% endif %}
 
       <div class="d-card">
+        <h3>My adherence <span class="med-sub">· last 7 days</span></h3>
+        {% if adherence.pct is not none %}
+        <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;">
+          <span style="font-size:2rem;font-weight:700;">{{ "%g"|format(adherence.pct) }}%</span>
+          <span class="med-sub">{{ adherence.taken }} taken · {{ adherence.skipped + adherence.delayed }} skipped · {{ adherence.missed }} missed · {{ adherence.pending }} pending</span>
+        </div>
+        <div style="height:8px;background:#e5e7eb;border-radius:4px;margin-top:10px;">
+          <div style="height:8px;border-radius:4px;width:{{ adherence.pct }}%;background:{{ '#dc2626' if adherence.low else '#16a34a' }};"></div>
+        </div>
+        {% else %}
+        <p class="med-empty">No doses have come due yet, so there is nothing to measure.</p>
+        {% endif %}
+      </div>
+
+      <div class="d-card">
         <h3>Today's doses</h3>
         {% if todays_doses %}
         <div class="table-wrap">
           <table class="med-table">
-            <thead><tr><th>Time</th><th>Medication</th><th>Status</th><th>Did you take it?</th></tr></thead>
+            <thead><tr><th>Time</th><th>Medication</th><th>Did you take it?</th></tr></thead>
             <tbody>
               {% for d in todays_doses %}
               <tr class="{{ 'row-due' if d.state == 'due' }}">
                 <td>{{ d.time }}</td>
                 <td>{{ d.drug_name }} <span class="med-sub">· {{ d.dosage }}</span></td>
                 <td>
-                  {% if d.state == 'due' %}<span class="med-badge due">Due now</span>
-                  {% else %}<span class="med-badge {{ d.state }}">{{ d.state|capitalize }}</span>{% endif %}
-                </td>
-                <td>
-                  {% if d.can_respond %}
                   <div class="verify-cell">
                     <form method="post" action="/patient/doses/{{ d.id }}/respond">
                       <input type="hidden" name="status" value="taken">
-                      <button type="submit" class="med-btn primary sm">✔ Taken</button>
+                      <button type="submit"
+                              class="med-btn sm {{ 'primary' if d.can_respond or d.state == 'taken' }}"
+                              style="{{ 'opacity:1;' if d.state == 'taken' else '' }}"
+                              {{ 'disabled' if not d.can_respond }}>✔ Taken</button>
                     </form>
                     <form method="post" action="/patient/doses/{{ d.id }}/respond">
-                      <input type="hidden" name="status" value="skipped">
-                      <button type="submit" class="med-btn sm">Skip</button>
+                      <input type="hidden" name="status" value="missed">
+                      <button type="submit"
+                              class="med-btn sm"
+                              style="{{ 'background:#fdecea;color:#b42318;border-color:#f5c2c0;opacity:1;' if d.state in ('skipped', 'delayed', 'missed') else '' }}"
+                              {{ 'disabled' if not d.can_respond }}>✖ Missed</button>
                     </form>
                   </div>
-                  {% else %}<span class="med-sub">—</span>{% endif %}
                 </td>
               </tr>
               {% endfor %}

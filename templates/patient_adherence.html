@@ -49,7 +49,7 @@
       <div class="stat-grid four">
         <div class="stat-card">
           <div class="stat-label">Adherence</div>
-          <div class="stat-value">{{ (stats.pct ~ '%') if stats.pct is not none else 'N/A' }}</div>
+          <div class="stat-value">{{ ("%g"|format(stats.pct) ~ '%') if stats.pct is not none else 'N/A' }}</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">Taken</div>
@@ -66,7 +66,9 @@
       </div>
 
       {% if stats.pct is not none %}
-      <div class="adh-track"><div class="adh-fill {{ 'low' if stats.low else 'ok' }}" style="width: {{ stats.pct }}%;"></div></div>
+      <div style="height:8px;background:#e5e7eb;border-radius:4px;">
+        <div style="height:8px;border-radius:4px;width:{{ stats.pct }}%;background:{{ '#dc2626' if stats.low else '#16a34a' }};"></div>
+      </div>
       <p class="med-sub" style="margin-top:8px;">Alerts trigger below {{ threshold|int }}%. A dose counts as missed if it is still unconfirmed 2 hours after its time.</p>
       {% else %}
       <p class="med-empty">No doses have come due yet, so there is nothing to measure.</p>

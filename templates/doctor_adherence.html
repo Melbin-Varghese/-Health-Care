@@ -60,11 +60,12 @@
               <td>{{ r.patient.name }} <span class="med-sub">· {{ r.patient.age }} yrs</span></td>
               <td>
                 {% if s.pct is not none %}
-                <div class="adh-cell">
-                  <span class="adh-pct">{{ s.pct }}%</span>
-                  <div class="adh-track"><div class="adh-fill {{ 'low' if s.low else 'ok' }}" style="width: {{ s.pct }}%;"></div></div>
+                <strong>{{ "%g"|format(s.pct) }}%</strong>
+                <span class="med-sub">({{ s.taken }} of {{ s.considered }} doses)</span>
+                <div style="height:6px;background:#e5e7eb;border-radius:4px;margin-top:4px;min-width:110px;">
+                  <div style="height:6px;border-radius:4px;width:{{ s.pct }}%;background:{{ '#dc2626' if s.low else '#16a34a' }};"></div>
                 </div>
-                {% else %}<span class="med-sub">—</span>{% endif %}
+                {% else %}<span class="med-sub">No doses due yet</span>{% endif %}
               </td>
               <td>{{ s.taken }}</td>
               <td>{{ s.skipped + s.delayed }}</td>
@@ -86,6 +87,29 @@
       </p>
       {% else %}
       <p class="med-empty">You haven't prescribed any medication yet, so there is nothing to track.</p>
+      {% endif %}
+    </div>
+
+    <div class="d-card">
+      <h3>Missed / skipped doses</h3>
+      {% if missed_doses %}
+      <div class="table-wrap">
+        <table class="med-table">
+          <thead><tr><th>Patient</th><th>Medication</th><th>Scheduled</th><th>Status</th></tr></thead>
+          <tbody>
+            {% for d in missed_doses %}
+            <tr>
+              <td>{{ d.patient_name }}</td>
+              <td>{{ d.drug_name }} <span class="med-sub">· {{ d.dosage }}</span></td>
+              <td class="nowrap">{{ d.date }}, {{ d.time }}</td>
+              <td><span class="med-badge {{ d.state }}">{{ d.state|capitalize }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="med-empty">No missed doses recently.</p>
       {% endif %}
     </div>
 
