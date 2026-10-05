@@ -21,3 +21,4 @@ SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-me")
 # Address of the standalone pneumonia AI service (model runs on port 8000).
 # The main app itself runs on port 9000:  uvicorn app:app --reload --port 9000
 PNEUMONIA_SERVICE_URL = os.getenv("PNEUMONIA_SERVICE_URL", "http://127.0.0.1:8000")
+SYMPTOM_SERVICE_URL= os.getenv("SYMPTOM_SERVICE_URL", "http://127.0.0.1:8001")

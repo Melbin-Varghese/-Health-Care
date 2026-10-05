@@ -4,6 +4,7 @@ Every database query in one file. Routers never write SQL -- they call
 these functions (same role as crud.py in the Flask project).
 """
 
+import json
 from contextlib import closing
 
 from database import get_db
@@ -316,4 +317,40 @@ def list_alerts_for_patient(patient_id: int, limit: int = 30):
         return conn.execute(
             "SELECT * FROM adherence_alerts WHERE patient_id = ? ORDER BY id DESC LIMIT ?",
             (patient_id, limit),
+        ).fetchall()
+
+
+# --------------------------- symptom checker ---------------------------
+def create_symptom_check(patient_id, symptoms_json, severity, duration_days,
+                         urgency, top_condition, result_json) -> None:
+    with closing(get_db()) as conn:
+        conn.execute(
+            """INSERT INTO symptom_checks
+               (patient_id, symptoms, severity, duration_days, urgency, top_condition, result_json)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (patient_id, symptoms_json, severity, duration_days, urgency, top_condition, result_json),
+        )
+        conn.commit()
+
+
+def list_symptom_checks(patient_id: int, limit: int = 10):
+    """Newest first. 'symptoms' holds a JSON list of readable symptom names."""
+    with closing(get_db()) as conn:
+        rows = conn.execute(
+            "SELECT * FROM symptom_checks WHERE patient_id = ? ORDER BY id DESC LIMIT ?",
+            (patient_id, limit),
+        ).fetchall()
+    out = []
+    for r in rows:
+        d = dict(r)
+        d["symptom_labels"] = json.loads(d["symptoms"])
+        out.append(d)
+    return out
+
+
+def list_doctors_by_department(department: str, limit: int = 3):
+    with closing(get_db()) as conn:
+        return conn.execute(
+            "SELECT id, name, department FROM doctors WHERE department = ? ORDER BY name LIMIT ?",
+            (department, limit),
         ).fetchall()

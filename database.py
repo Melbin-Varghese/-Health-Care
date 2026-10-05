@@ -118,5 +118,20 @@ def init_db() -> None:
             FOREIGN KEY (patient_id) REFERENCES patients(id)
         )
     """)
+
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS symptom_checks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            patient_id INTEGER NOT NULL,
+            symptoms TEXT NOT NULL,                 -- JSON list of symptom ids
+            severity TEXT NOT NULL,
+            duration_days INTEGER NOT NULL,
+            urgency TEXT NOT NULL,                  -- emergency | urgent | routine
+            top_condition TEXT,
+            result_json TEXT NOT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (patient_id) REFERENCES patients(id)
+        )
+    """)
     conn.commit()
     conn.close()

@@ -33,6 +33,7 @@ from routes.patient_prescriptions import router as patient_prescriptions_router
 from routes.pneumonia import router as pneumonia_router
 from routes.risk_scoring import router as risk_router
 from routes.scan_review import router as scan_review_router
+from routes.symptom_checker import router as symptom_checker_router
 
 
 @asynccontextmanager
@@ -59,6 +60,7 @@ def create_app() -> FastAPI:
     app.include_router(pneumonia_router)
     app.include_router(risk_router)
     app.include_router(scan_review_router)
+    app.include_router(symptom_checker_router)
 
     # Not logged in -> redirect to the matching login page (like login_view in Flask-Login)
     @app.exception_handler(LoginRequired)

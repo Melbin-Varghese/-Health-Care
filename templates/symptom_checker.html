@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Symptom Checker — Sukham</title>
+<link rel="stylesheet" href="/static/css/styleee.css">
+<link rel="stylesheet" href="/static/css/medication.css">
+<style>
+.sym-group { margin-bottom: 18px; }
+.sym-group h4 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: .04em; color: var(--text-dim); margin: 0 0 8px; }
+.sym-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.sym-chip { position: relative; }
+.sym-chip input { position: absolute; opacity: 0; pointer-events: none; }
+.sym-chip span {
+  display: inline-block; padding: 7px 14px; border-radius: 999px; font-size: 0.88rem;
+  background: rgba(255,255,255,0.45); border: 1px solid var(--border); cursor: pointer;
+  transition: background .12s ease;
+}
+.sym-chip span:hover { background: rgba(255,255,255,0.75); }
+.sym-chip input:checked + span { background: var(--accent); font-weight: 700; }
+.sym-chip input:focus-visible + span { outline: 2px solid var(--text); outline-offset: 2px; }
+.sym-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0 4px; }
+.res-match { padding: 14px 0; border-bottom: 1px solid rgba(0,0,0,0.25); }
+.res-match:last-child { border-bottom: none; }
+.res-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.res-name { font-weight: 700; }
+.res-why, .res-advice { font-size: 0.88rem; color: var(--text-dim); margin: 4px 0 0; }
+.disclaimer { font-size: 0.82rem; color: var(--text-dim); margin-top: 14px; }
+.emergency-banner { background: var(--error-bg); color: var(--error); border: 1px solid var(--error);
+  border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; font-weight: 700; }
+.emergency-banner ul { margin: 8px 0 0 18px; padding: 0; font-weight: 400; }
+@media (max-width: 640px) { .sym-row { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body class="dashboard-body">
+<div class="dash-layout">
+  {% include "_patient_sidebar.html" %}
+
+  <main class="main-content">
+    <div class="topbar">
+      <h2>Symptom Checker</h2>
+      <div class="topbar-actions">
+        <div class="avatar-pill">
+          <span class="avatar-circle">{{ patient.name[0]|upper }}</span>
+          {{ patient.name }}
+        </div>
+      </div>
+    </div>
+
+    {% if result %}
+    <div class="d-card">
+      {% if result.urgency == "emergency" %}
+        <div class="emergency-banner">
+          {{ result.headline }}
+          <ul>{% for r in result.reasons %}<li>{{ r }}</li>{% endfor %}</ul>
+        </div>
+      {% elif result.urgency == "urgent" %}
+        <div class="alert-banner">{{ result.headline }}
+          <ul style="margin:8px 0 0 18px;padding:0;">{% for r in result.reasons %}<li>{{ r }}</li>{% endfor %}</ul>
+        </div>
+      {% else %}
+        <div class="ok-banner">{{ result.headline }}</div>
+      {% endif %}
+
+      <h3>Possible causes</h3>
+      {% if result.matches %}
+        {% for m in result.matches %}
+        <div class="res-match">
+          <div class="res-top">
+            <span class="res-name">{{ m.name }}</span>
+            <span class="med-badge {{ 'low' if m.likelihood == 'Higher' else ('delayed' if m.likelihood == 'Moderate' else 'ok') }}">{{ m.likelihood }} match</span>
+          </div>
+          <p class="res-why">Matches: {{ m.matched|join(", ") }}</p>
+          <p class="res-advice">{{ m.advice }}</p>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="med-empty">No clear match for these symptoms. A doctor can examine you properly.</p>
+      {% endif %}
+
+      <h3 style="margin-top:22px;">Who to see</h3>
+      <p class="med-hint" style="margin:0 0 10px;">Suggested department: <strong>{{ result.suggested_dept }}</strong></p>
+      {% if doctors %}
+        <ul style="margin:0 0 4px 18px;padding:0;font-size:0.92rem;">
+          {% for d in doctors %}<li>Dr. {{ d.name }} — {{ d.department }}</li>{% endfor %}
+        </ul>
+      {% else %}
+        <p class="med-empty">No registered doctor in this department yet.</p>
+      {% endif %}
+
+      <p class="disclaimer">This tool gives general information only and is not a medical diagnosis. If you feel very unwell, call {{ emergency_number }}.</p>
+    </div>
+    {% endif %}
+
+    <div class="d-card">
+      <h1>{{ "Check again" if result else "What are you experiencing?" }}</h1>
+      <p class="med-hint">Select every symptom that applies, then tell us how long and how bad.</p>
+
+      {% if error %}
+        <ul class="flash-list"><li class="flash error">{{ error }}</li></ul>
+      {% endif %}
+
+      <form method="POST" action="/patient/symptom-checker">
+        {% for group, items in groups.items() %}
+        <div class="sym-group">
+          <h4>{{ group }}</h4>
+          <div class="sym-grid">
+            {% for sid, label in items %}
+            <label class="sym-chip">
+              <input type="checkbox" name="symptoms" value="{{ sid }}" {{ "checked" if sid in selected }}>
+              <span>{{ label }}</span>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+
+        <div class="sym-row">
+          <div class="field">
+            <label for="duration_days">For how many days?</label>
+            <input type="number" id="duration_days" name="duration_days" min="0" max="365" value="{{ form.duration_days }}" required>
+          </div>
+          <div class="field">
+            <label for="severity">How severe?</label>
+            <select id="severity" name="severity">
+              {% for s in ["mild", "moderate", "severe"] %}
+              <option value="{{ s }}" {{ "selected" if form.severity == s }}>{{ s|capitalize }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" class="btn">Check symptoms</button>
+      </form>
+    </div>
+
+    <div class="d-card">
+      <h3>Previous checks</h3>
+      {% if history %}
+      <div class="table-wrap">
+        <table class="med-table">
+          <thead><tr><th>Date</th><th>Symptoms</th><th>Top match</th><th>Urgency</th></tr></thead>
+          <tbody>
+            {% for h in history %}
+            <tr>
+              <td>{{ h.created_at }}</td>
+              <td>{{ h.symptom_labels|join(", ") }}</td>
+              <td>{{ h.top_condition or "—" }}</td>
+              <td><span class="med-badge {{ 'low' if h.urgency == 'emergency' else ('delayed' if h.urgency == 'urgent' else 'ok') }}">{{ h.urgency|capitalize }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <p class="med-empty">No checks yet.</p>
+      {% endif %}
+    </div>
+  </main>
+</div>
+</body>
+</html>

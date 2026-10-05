@@ -242,3 +242,4 @@ services/*.pkl
 services/*.joblib
 services/*.pb
 services/*.tflite
+services/symptom_service.py
