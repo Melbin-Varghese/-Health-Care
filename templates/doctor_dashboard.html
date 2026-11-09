@@ -25,10 +25,15 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
         Dashboard
       </button>
-      <button class="nav-item" data-target="appointments">
+      <a href="/doctor/appointments" class="nav-item">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
         Appointments
-      </button>
+      </a>
+      <a href="/doctor/alerts" class="nav-item">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+        Patient Alerts
+        <span data-alert-badge style="margin-left:auto;background:#c62828;color:#fff;border-radius:999px;padding:1px 8px;font-size:0.75rem;font-weight:700;" {{ 'hidden' if not open_alert_count(doctor.id) }}>{{ open_alert_count(doctor.id) }}</span>
+      </a>
       
       <button class="nav-item" data-target="patients">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -94,6 +99,20 @@
 
     <!-- Dashboard overview -->
     <section class="content-section active" id="dashboard">
+      {% set urgent_alerts = urgent_alert_count(doctor.id) %}
+      {% if urgent_alerts %}
+      <div class="alert-banner" style="background:#c62828;color:#fff;">
+        {{ urgent_alerts }} patient{{ 's are' if urgent_alerts != 1 else ' is' }} asking for help right now.
+        <a href="/doctor/alerts" style="color:#fff;font-weight:700;">Open alerts</a>
+      </div>
+      {% endif %}
+      {% set pending_appts = pending_appointments(doctor.id) %}
+      {% if pending_appts %}
+      <div class="alert-banner">
+        {{ pending_appts }} appointment request{{ 's are' if pending_appts != 1 else ' is' }} waiting for your response.
+        <a href="/doctor/appointments">Review</a>
+      </div>
+      {% endif %}
       <div class="stat-grid">
         <div class="stat-card">
           <div class="stat-label">Department</div>
@@ -105,7 +124,7 @@
         </div>
         <div class="stat-card">
           <div class="stat-label">Today's appointments</div>
-          <div class="stat-value">3 <span>scheduled</span></div>
+          <div class="stat-value">{{ appointments_today(doctor.id) }} <span>confirmed</span></div>
         </div>
       </div>
 
@@ -209,26 +228,6 @@
       </div>
     </section>
 
-    <!-- Appointments -->
-    <section class="content-section" id="appointments">
-      <div class="d-card">
-        <h3>Upcoming appointments</h3>
-        <div class="list-row">
-          <div class="list-main">
-            <span class="list-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
-            <div><div>Priya Ramesh</div><div class="list-sub">Thu, 10:30 AM · Follow-up</div></div>
-          </div>
-          <span class="list-tag">Confirmed</span>
-        </div>
-        <div class="list-row">
-          <div class="list-main">
-            <span class="list-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
-            <div><div>Arjun Nair</div><div class="list-sub">Fri, 4:00 PM · Consultation</div></div>
-          </div>
-          <span class="list-tag">Pending</span>
-        </div>
-      </div>
-    </section>
 
     <!-- Records: prescribed medications -->
     <section class="content-section" id="records">
@@ -292,5 +291,6 @@
   openFromHash();
 </script>
 
+<script src="/static/js/doctor_alert_poll.js" defer></script>
 </body>
 </html>

@@ -6,6 +6,7 @@ these functions (same role as crud.py in the Flask project).
 
 import json
 from contextlib import closing
+from datetime import datetime, timedelta
 
 from database import get_db
 
@@ -353,4 +354,230 @@ def list_doctors_by_department(department: str, limit: int = 3):
         return conn.execute(
             "SELECT id, name, department FROM doctors WHERE department = ? ORDER BY name LIMIT ?",
             (department, limit),
+        ).fetchall()
+
+
+# ----------------------------- appointments -----------------------------
+# start_time is local "YYYY-MM-DD HH:MM:SS" text, same convention as dose_logs.
+LIVE = "('pending', 'confirmed')"
+
+
+def list_doctors_for_booking():
+    with closing(get_db()) as conn:
+        return conn.execute(
+            "SELECT id, name, department FROM doctors "
+            "ORDER BY department COLLATE NOCASE, name COLLATE NOCASE"
+        ).fetchall()
+
+
+def create_appointment(patient_id, doctor_id, start_time, reason, created_at) -> int:
+    """Insert a pending appointment. Raises sqlite3.IntegrityError if the slot is taken."""
+    with closing(get_db()) as conn:
+        cur = conn.execute(
+            """INSERT INTO appointments
+               (patient_id, doctor_id, start_time, reason, status, created_at, updated_at)
+               VALUES (?, ?, ?, ?, 'pending', ?, ?)""",
+            (patient_id, doctor_id, start_time, reason, created_at, created_at),
+        )
+        conn.commit()
+        return cur.lastrowid
+
+
+def get_appointment(appt_id: int):
+    with closing(get_db()) as conn:
+        return conn.execute("SELECT * FROM appointments WHERE id = ?", (appt_id,)).fetchone()
+
+
+_APPT_SELECT = """
+    SELECT a.*, p.name AS patient_name, p.age AS patient_age, p.gender AS patient_gender,
+           d.name AS doctor_name, d.department AS doctor_department
+      FROM appointments a
+      JOIN patients p ON p.id = a.patient_id
+      JOIN doctors  d ON d.id = a.doctor_id
+"""
+
+
+def list_appointments_for_patient(patient_id: int, limit: int = 200):
+    with closing(get_db()) as conn:
+        return conn.execute(
+            _APPT_SELECT + " WHERE a.patient_id = ? ORDER BY a.start_time DESC LIMIT ?",
+            (patient_id, limit),
+        ).fetchall()
+
+
+def list_appointments_for_doctor(doctor_id: int, limit: int = 300):
+    with closing(get_db()) as conn:
+        return conn.execute(
+            _APPT_SELECT + " WHERE a.doctor_id = ? ORDER BY a.start_time DESC LIMIT ?",
+            (doctor_id, limit),
+        ).fetchall()
+
+
+def list_taken_slots(doctor_id: int, start: str, end: str):
+    """start_time of live appointments for this doctor with start <= t < end."""
+    with closing(get_db()) as conn:
+        return [r["start_time"] for r in conn.execute(
+            f"SELECT start_time FROM appointments WHERE doctor_id = ? AND status IN {LIVE} "
+            "AND start_time >= ? AND start_time < ?",
+            (doctor_id, start, end),
+        ).fetchall()]
+
+
+def get_next_appointment_for_patient(patient_id: int, now: str):
+    with closing(get_db()) as conn:
+        return conn.execute(
+            _APPT_SELECT + f" WHERE a.patient_id = ? AND a.status IN {LIVE} AND a.start_time > ? "
+            "ORDER BY a.start_time LIMIT 1",
+            (patient_id, now),
+        ).fetchone()
+
+
+def count_confirmed_between(doctor_id: int, start: str, end: str) -> int:
+    with closing(get_db()) as conn:
+        return conn.execute(
+            "SELECT COUNT(*) FROM appointments WHERE doctor_id = ? AND status = 'confirmed' "
+            "AND start_time >= ? AND start_time < ?",
+            (doctor_id, start, end),
+        ).fetchone()[0]
+
+
+def count_pending_after(doctor_id: int, now: str) -> int:
+    with closing(get_db()) as conn:
+        return conn.execute(
+            "SELECT COUNT(*) FROM appointments WHERE doctor_id = ? AND status = 'pending' AND start_time > ?",
+            (doctor_id, now),
+        ).fetchone()[0]
+
+
+def update_appointment_status(appt_id: int, new_status: str, allowed_from, updated_at: str,
+                              patient_id=None, doctor_id=None, doctor_note=None) -> bool:
+    """Change status only if it is currently one of `allowed_from` AND belongs to the caller."""
+    allowed_from = tuple(allowed_from)
+    sql = ("UPDATE appointments SET status = ?, updated_at = ?, doctor_note = COALESCE(?, doctor_note) "
+           "WHERE id = ? AND status IN (" + ",".join("?" * len(allowed_from)) + ")")
+    params = [new_status, updated_at, doctor_note, appt_id, *allowed_from]
+    if patient_id is not None:
+        sql += " AND patient_id = ?"
+        params.append(patient_id)
+    if doctor_id is not None:
+        sql += " AND doctor_id = ?"
+        params.append(doctor_id)
+    with closing(get_db()) as conn:
+        cur = conn.execute(sql, params)
+        conn.commit()
+        return cur.rowcount == 1
+
+
+# ----------------------------- help signals / care alerts -----------------------------
+# A doctor sees an alert when the patient is in their care (they prescribed something, or
+# have a pending/confirmed appointment with them) -- OR when the patient has no doctor at
+# all yet, so a call for help is never delivered to nobody.
+# An urgent alert nobody answers within ESCALATE_AFTER_SECONDS becomes visible to EVERY doctor.
+ESCALATE_AFTER_SECONDS = 90
+
+_ALERT_SCOPE = """(
+    a.patient_id IN (SELECT patient_id FROM medications WHERE doctor_id = :doc
+                     UNION SELECT patient_id FROM appointments
+                            WHERE doctor_id = :doc AND status IN ('pending', 'confirmed'))
+    OR a.patient_id NOT IN (SELECT patient_id FROM medications
+                            UNION SELECT patient_id FROM appointments
+                                   WHERE status IN ('pending', 'confirmed'))
+    OR (a.status = 'open' AND a.level IN ('help', 'emergency') AND a.created_at <= :esc)
+    OR a.acknowledged_by = :doc
+)"""
+
+
+def _scope(doctor_id: int, **extra) -> dict:
+    cutoff = (datetime.now().replace(microsecond=0) - timedelta(seconds=ESCALATE_AFTER_SECONDS))
+    return {"doc": doctor_id, "esc": cutoff.strftime("%Y-%m-%d %H:%M:%S"), **extra}
+
+
+_ALERT_SELECT = """
+    SELECT a.*, p.name AS patient_name, p.age AS patient_age, p.gender AS patient_gender,
+           d.name AS acknowledged_by_name
+      FROM care_alerts a
+      JOIN patients p ON p.id = a.patient_id
+      LEFT JOIN doctors d ON d.id = a.acknowledged_by
+"""
+
+
+def create_care_alert(patient_id, level, source, detail, now) -> int:
+    with closing(get_db()) as conn:
+        cur = conn.execute(
+            """INSERT INTO care_alerts (patient_id, level, source, detail, status, created_at, last_signal_at)
+               VALUES (?, ?, ?, ?, 'open', ?, ?)""",
+            (patient_id, level, source, detail, now, now),
+        )
+        conn.commit()
+        return cur.lastrowid
+
+
+def get_latest_care_alert(patient_id: int):
+    with closing(get_db()) as conn:
+        return conn.execute(
+            "SELECT * FROM care_alerts WHERE patient_id = ? ORDER BY id DESC LIMIT 1", (patient_id,)
+        ).fetchone()
+
+
+def touch_care_alert(alert_id: int, now: str) -> None:
+    with closing(get_db()) as conn:
+        conn.execute("UPDATE care_alerts SET last_signal_at = ? WHERE id = ?", (now, alert_id))
+        conn.commit()
+
+
+def get_care_alert_for_doctor(alert_id: int, doctor_id: int):
+    with closing(get_db()) as conn:
+        return conn.execute(
+            _ALERT_SELECT + " WHERE a.id = :id AND " + _ALERT_SCOPE, _scope(doctor_id, id=alert_id)
+        ).fetchone()
+
+
+def list_care_alerts_for_doctor(doctor_id: int, limit: int = 100):
+    with closing(get_db()) as conn:
+        return conn.execute(
+            _ALERT_SELECT + " WHERE " + _ALERT_SCOPE + " ORDER BY a.id DESC LIMIT :limit",
+            _scope(doctor_id, limit=limit),
+        ).fetchall()
+
+
+def count_open_care_alerts_for_doctor(doctor_id: int):
+    """(open alerts, open alerts that are help/emergency)."""
+    with closing(get_db()) as conn:
+        row = conn.execute(
+            "SELECT COUNT(*), COALESCE(SUM(a.level IN ('help', 'emergency')), 0) FROM care_alerts a "
+            "WHERE a.status = 'open' AND " + _ALERT_SCOPE, _scope(doctor_id),
+        ).fetchone()
+        return row[0], int(row[1])
+
+
+def acknowledge_care_alert(alert_id: int, doctor_id: int, note, now: str) -> bool:
+    """Only an OPEN alert in this doctor's scope can be acknowledged."""
+    with closing(get_db()) as conn:
+        cur = conn.execute(
+            """UPDATE care_alerts SET status = 'acknowledged', acknowledged_by = :doc,
+                      acknowledged_at = :now, ack_note = :note
+                WHERE id = :id AND status = 'open'
+                  AND id IN (SELECT a.id FROM care_alerts a WHERE """ + _ALERT_SCOPE + ")",
+            _scope(doctor_id, now=now, note=note, id=alert_id),
+        )
+        conn.commit()
+        return cur.rowcount == 1
+
+
+def list_care_alerts_for_patient(patient_id: int, limit: int = 10):
+    with closing(get_db()) as conn:
+        return conn.execute(
+            _ALERT_SELECT + " WHERE a.patient_id = ? ORDER BY a.id DESC LIMIT ?", (patient_id, limit)
+        ).fetchall()
+
+
+def list_care_doctors(patient_id: int):
+    """Doctors who will see this patient's alerts (empty = every doctor will)."""
+    with closing(get_db()) as conn:
+        return conn.execute(
+            """SELECT id, name, department FROM doctors WHERE id IN (
+                   SELECT doctor_id FROM medications WHERE patient_id = :p
+                   UNION SELECT doctor_id FROM appointments
+                          WHERE patient_id = :p AND status IN ('pending', 'confirmed'))
+               ORDER BY name COLLATE NOCASE""", {"p": patient_id},
         ).fetchall()

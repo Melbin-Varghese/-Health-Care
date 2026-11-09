@@ -1,0 +1,56 @@
+/* ---------- Appointments pages (self-contained; uses theme variables from styleee.css) ---------- */
+.appt-hint { color: var(--text-dim, #555); font-size: 0.92rem; margin: 4px 0 18px; }
+.appt-sub  { font-size: 0.82rem; color: var(--text-dim, #555); }
+.appt-empty { color: var(--text-dim, #555); font-size: 0.92rem; margin: 6px 0; }
+.appt-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.appt-count { font-size: 0.82rem; font-weight: 700; padding: 2px 10px; border-radius: 999px;
+  background: rgba(245,158,11,0.18); color: #92400e; border: 1px solid #b45309; }
+
+.appt-find { display: grid; grid-template-columns: 2fr 1fr auto; gap: 14px; align-items: end; }
+@media (max-width: 760px) { .appt-find { grid-template-columns: 1fr; } }
+.appt-find .field { margin-bottom: 0; }
+.appt-find select, .appt-find input[type="date"], .appt-book textarea, .appt-note-input {
+  width: 100%; padding: 11px 14px; background: #f7f8fa; border: 1px solid var(--border, #d0d5dd);
+  border-radius: 8px; color: var(--text, #111); font-size: 0.95rem; font-family: inherit; outline: none; }
+.appt-book textarea { min-height: 84px; resize: vertical; }
+.appt-find select:focus, .appt-find input:focus, .appt-book textarea:focus, .appt-note-input:focus { border-color: var(--accent, #4f46e5); }
+
+.appt-book { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border, #d0d5dd); }
+.appt-book h3 { margin: 0 0 4px; }
+.slot-grid { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 18px; }
+.slot-chip { position: relative; }
+.slot-chip input { position: absolute; opacity: 0; pointer-events: none; }
+.slot-chip span { display: inline-block; padding: 8px 16px; border-radius: 999px; font-size: 0.9rem;
+  background: rgba(255,255,255,0.45); border: 1px solid var(--border, #d0d5dd); cursor: pointer; transition: background .12s ease; }
+.slot-chip span:hover { background: rgba(255,255,255,0.75); }
+.slot-chip input:checked + span { background: var(--accent, #4f46e5); font-weight: 700; }
+.slot-chip input:focus-visible + span { outline: 2px solid var(--text, #111); outline-offset: 2px; }
+
+.appt-inline-error { background: var(--error-bg, #fdecea); color: var(--error, #b42318); border: 1px solid var(--error, #b42318);
+  border-radius: 8px; padding: 10px 14px; margin-top: 14px; font-size: 0.9rem; }
+
+.appt-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+.appt-table th { text-align: left; font-size: 0.78rem; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--text-dim, #555); padding: 8px 10px; border-bottom: 1px solid var(--border, #d0d5dd); }
+.appt-table td { padding: 12px 10px; border-bottom: 1px solid rgba(0,0,0,0.12); vertical-align: top; }
+.appt-table tr:last-child td { border-bottom: none; }
+.appt-wrap { overflow-x: auto; }
+.appt-nowrap { white-space: nowrap; }
+
+.appt-badge { display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: 0.8rem; font-weight: 700;
+  border: 1px solid transparent; white-space: nowrap; }
+.appt-badge.pending   { background: rgba(245,158,11,0.18); color: #92400e; border-color: #b45309; }
+.appt-badge.confirmed { background: var(--success-bg, #e7f6ec); color: var(--success, #067647); border-color: var(--success, #067647); }
+.appt-badge.declined  { background: var(--error-bg, #fdecea); color: var(--error, #b42318); border-color: var(--error, #b42318); }
+.appt-badge.cancelled, .appt-badge.expired, .appt-badge.completed {
+  background: rgba(255,255,255,0.55); color: var(--text-dim, #555); border-color: var(--border, #d0d5dd); }
+
+.appt-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.appt-btn { padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border, #d0d5dd); background: rgba(255,255,255,0.6);
+  color: var(--text, #111); font-size: 0.85rem; font-weight: 600; cursor: pointer; font-family: inherit; }
+.appt-btn:hover { background: rgba(255,255,255,0.9); }
+.appt-btn.primary { background: var(--accent, #4f46e5); border-color: var(--accent, #4f46e5); }
+.appt-btn.danger { color: var(--error, #b42318); border-color: var(--error, #b42318); }
+.appt-note-input { padding: 7px 10px; font-size: 0.85rem; min-width: 190px; flex: 1; }
+.appt-banner { background: rgba(245,158,11,0.18); color: #92400e; border: 1px solid #b45309; border-radius: 10px;
+  padding: 12px 16px; margin-bottom: 16px; font-weight: 600; }

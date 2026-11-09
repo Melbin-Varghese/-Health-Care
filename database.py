@@ -133,5 +133,48 @@ def init_db() -> None:
             FOREIGN KEY (patient_id) REFERENCES patients(id)
         )
     """)
+    # ---------------- appointments ----------------
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS appointments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            patient_id INTEGER NOT NULL,
+            doctor_id INTEGER NOT NULL,
+            start_time TEXT NOT NULL,               -- "YYYY-MM-DD HH:MM:SS" (server local time)
+            reason TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pending', -- pending | confirmed | declined | cancelled
+            doctor_note TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            FOREIGN KEY (patient_id) REFERENCES patients(id),
+            FOREIGN KEY (doctor_id) REFERENCES doctors(id)
+        )
+    """)
+    # A doctor (or a patient) can hold only ONE live appointment per time slot.
+    # The database enforces this, so two people clicking at once can't double-book.
+    conn.execute("""CREATE UNIQUE INDEX IF NOT EXISTS idx_appt_doctor_slot
+                    ON appointments (doctor_id, start_time) WHERE status IN ('pending', 'confirmed')""")
+    conn.execute("""CREATE UNIQUE INDEX IF NOT EXISTS idx_appt_patient_slot
+                    ON appointments (patient_id, start_time) WHERE status IN ('pending', 'confirmed')""")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_appt_patient ON appointments (patient_id, start_time)")
+    # ---------------- help signals / care alerts ----------------
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS care_alerts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            patient_id INTEGER NOT NULL,
+            level TEXT NOT NULL,                    -- caution | help | emergency
+            source TEXT NOT NULL,                   -- gesture | emotion | button
+            detail TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'open',    -- open | acknowledged
+            created_at TEXT NOT NULL,
+            last_signal_at TEXT NOT NULL,           -- refreshed while the patient keeps signalling
+            acknowledged_by INTEGER,
+            acknowledged_at TEXT,
+            ack_note TEXT,
+            FOREIGN KEY (patient_id) REFERENCES patients(id),
+            FOREIGN KEY (acknowledged_by) REFERENCES doctors(id)
+        )
+    """)
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_alert_patient ON care_alerts (patient_id, id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_alert_status ON care_alerts (status, id)")
     conn.commit()
     conn.close()

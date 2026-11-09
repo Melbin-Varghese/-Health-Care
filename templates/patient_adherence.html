@@ -10,7 +10,8 @@
 <body class="dashboard-body">
 <div class="dash-layout">
 
-  {% include "_patient_sidebar.html" %}
+  {% set nav_active = 'prescriptions' %}
+  {% include "partials/_patient_sidebar.html" %}
 
   <main class="main-content">
     <div class="topbar">

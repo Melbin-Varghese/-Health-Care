@@ -11,7 +11,7 @@
 <div class="dash-layout">
 
   {% set nav_active = 'prescriptions' %}
-  {% include "_doctor_sidebar.html" %}
+  {% include "partials/_doctor_sidebar.html" %}
 
   <main class="main-content">
     <div class="topbar">
@@ -83,7 +83,7 @@
         </table>
       </div>
       <p class="med-sub" style="margin-top:12px;">
-        Adherence = taken ÷ (taken + skipped + missed). A dose counts as missed if it is still unconfirmed 2 hours after its time.
+        Adherence = taken ÷ (taken + skipped + delayed + missed). A dose counts as missed if it is still unconfirmed 2 hours after its time.
       </p>
       {% else %}
       <p class="med-empty">You haven't prescribed any medication yet, so there is nothing to track.</p>

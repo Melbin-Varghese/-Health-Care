@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Appointments — Sukham</title>
+<link rel="stylesheet" href="/static/css/styleee.css">
+<link rel="stylesheet" href="/static/css/appointments.css">
+</head>
+<body class="dashboard-body">
+<div class="dash-layout">
+
+  {% set nav_active = 'appointments' %}
+  {% include "partials/_patient_sidebar.html" %}
+
+  <main class="main-content">
+    <div class="topbar">
+      <h2>Appointments</h2>
+      <div class="topbar-actions">
+        <div class="avatar-pill">
+          <span class="avatar-circle">{{ patient.name[0]|upper }}</span>
+          {{ patient.name }}
+        </div>
+      </div>
+    </div>
+
+    {% if flash %}
+    <ul class="flash-list"><li class="flash {{ flash.kind }}">{{ flash.text }}</li></ul>
+    {% endif %}
+
+    <!-- Book -->
+    <div class="d-card">
+      <h1>Book an appointment</h1>
+      <p class="appt-hint">Choose a doctor and a date to see free times ({{ slot_minutes }}-minute visits, Monday to Friday). The doctor confirms your request.</p>
+
+      {% if not doctors %}
+        <p class="appt-empty">No doctors are registered yet. Once a doctor signs up, you can book here.</p>
+      {% else %}
+      <form method="get" action="/patient/appointments" class="appt-find">
+        <div class="field">
+          <label for="doctor_id">Doctor</label>
+          <select id="doctor_id" name="doctor_id" required>
+            <option value="" disabled {{ 'selected' if not selected_doctor }}>Select a doctor</option>
+            {% for dept, docs in doctors|groupby('department') %}
+            <optgroup label="{{ dept }}">
+              {% for d in docs %}
+              <option value="{{ d.id }}" {{ 'selected' if selected_doctor and selected_doctor.id == d.id }}>Dr. {{ d.name }}</option>
+              {% endfor %}
+            </optgroup>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="day">Date</label>
+          <input type="date" id="day" name="day" value="{{ day }}" min="{{ min_day }}" max="{{ max_day }}" required>
+        </div>
+        <button class="btn" type="submit">Find times</button>
+      </form>
+
+      {% if slots_error %}
+        <div class="appt-inline-error">{{ slots_error }}</div>
+      {% endif %}
+      {% if error %}
+        <div class="appt-inline-error">{{ error }}</div>
+      {% endif %}
+
+      {% if slots is not none and selected_doctor %}
+      <form method="post" action="/patient/appointments/book" class="appt-book">
+        <h3>Dr. {{ selected_doctor.name }} · {{ selected_doctor.department }}</h3>
+        <p class="appt-hint" style="margin:0;">{{ day_label }}</p>
+        <input type="hidden" name="doctor_id" value="{{ selected_doctor.id }}">
+        <input type="hidden" name="day" value="{{ day }}">
+
+        {% if slots %}
+        <div class="slot-grid" role="radiogroup" aria-label="Available times">
+          {% for s in slots %}
+          <label class="slot-chip">
+            <input type="radio" name="slot" value="{{ s }}" {{ 'checked' if chosen_slot == s }} required>
+            <span>{{ s }}</span>
+          </label>
+          {% endfor %}
+        </div>
+
+        <div class="field">
+          <label for="reason">Reason for the visit</label>
+          <textarea id="reason" name="reason" maxlength="300" placeholder="e.g. Follow-up on blood pressure, new chest pain..." required>{{ reason }}</textarea>
+        </div>
+        <button class="btn" type="submit">Request appointment</button>
+        {% else %}
+        <p class="appt-empty">No free times that day. Try another date.</p>
+        {% endif %}
+      </form>
+      {% endif %}
+      {% endif %}
+    </div>
+
+    <!-- Upcoming -->
+    <div class="d-card">
+      <h3>Upcoming</h3>
+      {% if upcoming %}
+      <div class="appt-wrap">
+        <table class="appt-table">
+          <thead><tr><th>When</th><th>Doctor</th><th>Reason</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            {% for a in upcoming %}
+            <tr>
+              <td class="appt-nowrap">{{ a.date_label }}<div class="appt-sub">{{ a.time_label }}</div></td>
+              <td>Dr. {{ a.doctor_name }}<div class="appt-sub">{{ a.doctor_department }}</div></td>
+              <td>{{ a.reason }}{% if a.doctor_note %}<div class="appt-sub">Doctor's note: {{ a.doctor_note }}</div>{% endif %}</td>
+              <td><span class="appt-badge {{ a.state }}">{{ a.state_label }}</span></td>
+              <td>
+                {% if a.can_cancel %}
+                <form method="post" action="/patient/appointments/{{ a.id }}/cancel" onsubmit="return confirm('Cancel this appointment?');">
+                  <button class="appt-btn danger" type="submit">Cancel</button>
+                </form>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="appt-empty">No upcoming appointments.</p>
+      {% endif %}
+    </div>
+
+    <!-- History -->
+    <div class="d-card">
+      <h3>Past and closed</h3>
+      {% if history %}
+      <div class="appt-wrap">
+        <table class="appt-table">
+          <thead><tr><th>When</th><th>Doctor</th><th>Reason</th><th>Status</th></tr></thead>
+          <tbody>
+            {% for a in history %}
+            <tr>
+              <td class="appt-nowrap">{{ a.date_label }}<div class="appt-sub">{{ a.time_label }}</div></td>
+              <td>Dr. {{ a.doctor_name }}<div class="appt-sub">{{ a.doctor_department }}</div></td>
+              <td>{{ a.reason }}{% if a.doctor_note %}<div class="appt-sub">Doctor's note: {{ a.doctor_note }}</div>{% endif %}</td>
+              <td><span class="appt-badge {{ a.state }}">{{ a.state_label }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="appt-empty">Nothing here yet.</p>
+      {% endif %}
+    </div>
+  </main>
+</div>
+</body>
+</html>

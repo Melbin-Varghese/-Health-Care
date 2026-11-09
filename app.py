@@ -4,7 +4,7 @@ Application factory / entry point. Wires together config, middleware,
 static files, startup tasks and every router (FastAPI's "blueprints").
 
 Run with:
-    uvicorn app:app --reload --port 8000
+    uvicorn app:app --reload --port 9000
 
 To add a new feature later:
     1. Create routes/your_feature.py with its own APIRouter
@@ -23,7 +23,9 @@ from database import init_db
 from dependencies import LoginRequired
 from scheduler import start_scheduler, stop_scheduler
 
+from routes.appointments import router as appointments_router
 from routes.home import router as home_router
+from routes.monitor import router as monitor_router
 from routes.doctor_auth import router as doctor_auth_router
 from routes.doctor_dashboard import router as doctor_dashboard_router
 from routes.doctor_prescriptions import router as doctor_prescriptions_router
@@ -51,6 +53,8 @@ def create_app() -> FastAPI:
     app.mount("/static", StaticFiles(directory=config.STATIC_DIR), name="static")
 
     app.include_router(home_router)
+    app.include_router(appointments_router)
+    app.include_router(monitor_router)
     app.include_router(doctor_auth_router)
     app.include_router(doctor_dashboard_router)
     app.include_router(doctor_prescriptions_router)

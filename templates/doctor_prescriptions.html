@@ -11,7 +11,7 @@
 <div class="dash-layout">
 
   {% set nav_active = 'prescriptions' %}
-  {% include "_doctor_sidebar.html" %}
+  {% include "partials/_doctor_sidebar.html" %}
 
   <main class="main-content">
     <div class="topbar">
@@ -50,7 +50,7 @@
           <select id="patient_id" name="patient_id" required>
             <option value="" disabled {{ 'selected' if not form.get('patient_id') }}>Select a patient</option>
             {% for p in patients %}
-            <option value="{{ p.id }}" {{ 'selected' if form.get('patient_id') == p.id }}>{{ p.name }} · {{ p.age }} yrs · {{ p.gender }}</option>
+            <option value="{{ p.id }}" {{ 'selected' if (form.get('patient_id') or '')|string == p.id|string }}>{{ p.name }} · {{ p.age }} yrs · {{ p.gender }}</option>
             {% endfor %}
           </select>
         </div>

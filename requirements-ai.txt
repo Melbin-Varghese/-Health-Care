@@ -1,0 +1,8 @@
+# Pneumonia AI service (port 8000). Needs TensorFlow, so keep it separate.
+# The model was saved with Keras 3.12.1: install a matching TensorFlow/Keras.
+fastapi
+uvicorn[standard]
+python-multipart
+pillow
+numpy
+tensorflow
