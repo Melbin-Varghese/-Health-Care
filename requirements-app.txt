@@ -1,0 +1,11 @@
+# Main web app (port 9000). Install with:  pip install -r requirements-app.txt
+fastapi
+uvicorn[standard]
+jinja2
+itsdangerous
+httpx
+python-multipart
+apscheduler
+python-dotenv
+pillow
+numpy

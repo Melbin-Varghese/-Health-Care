@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Appointments — Sukham</title>
+<link rel="stylesheet" href="/static/css/styleee.css">
+<link rel="stylesheet" href="/static/css/appointments.css">
+</head>
+<body class="dashboard-body">
+<div class="dash-layout">
+
+  {% set nav_active = 'appointments' %}
+  {% include "partials/_doctor_sidebar.html" %}
+
+  <main class="main-content">
+    <div class="topbar">
+      <h2>Appointments</h2>
+      <div class="topbar-actions">
+        <div class="avatar-pill">
+          <span class="avatar-circle">{{ doctor.name[0]|upper }}</span>
+          Dr. {{ doctor.name }}
+        </div>
+      </div>
+    </div>
+
+    {% if flash %}
+    <ul class="flash-list"><li class="flash {{ flash.kind }}">{{ flash.text }}</li></ul>
+    {% endif %}
+
+    <!-- Needs a response -->
+    <div class="d-card">
+      <div class="appt-head">
+        <h3>Needs your response</h3>
+        {% if needs_action %}<span class="appt-count">{{ needs_action|length }} pending</span>{% endif %}
+      </div>
+      {% if needs_action %}
+      <div class="appt-wrap">
+        <table class="appt-table">
+          <thead><tr><th>When</th><th>Patient</th><th>Reason</th><th>Respond</th></tr></thead>
+          <tbody>
+            {% for a in needs_action %}
+            <tr>
+              <td class="appt-nowrap">{{ a.date_label }}<div class="appt-sub">{{ a.time_label }}</div></td>
+              <td>{{ a.patient_name }}<div class="appt-sub">{{ a.patient_age }} yrs · {{ a.patient_gender }}</div></td>
+              <td>{{ a.reason }}</td>
+              <td>
+                <form method="post" class="appt-actions">
+                  <input class="appt-note-input" type="text" name="note" maxlength="200" placeholder="Optional note to the patient">
+                  <button class="appt-btn primary" type="submit" formaction="/doctor/appointments/{{ a.id }}/confirm">Confirm</button>
+                  <button class="appt-btn danger" type="submit" formaction="/doctor/appointments/{{ a.id }}/decline">Decline</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="appt-empty">No requests waiting. You're all caught up.</p>
+      {% endif %}
+    </div>
+
+    <!-- Upcoming confirmed -->
+    <div class="d-card">
+      <h3>Upcoming confirmed</h3>
+      {% if upcoming %}
+      <div class="appt-wrap">
+        <table class="appt-table">
+          <thead><tr><th>When</th><th>Patient</th><th>Reason</th><th></th></tr></thead>
+          <tbody>
+            {% for a in upcoming %}
+            <tr>
+              <td class="appt-nowrap">{{ a.date_label }}<div class="appt-sub">{{ a.time_label }}</div></td>
+              <td>{{ a.patient_name }}<div class="appt-sub">{{ a.patient_age }} yrs · {{ a.patient_gender }}</div></td>
+              <td>{{ a.reason }}{% if a.doctor_note %}<div class="appt-sub">Your note: {{ a.doctor_note }}</div>{% endif %}</td>
+              <td>
+                <form method="post" class="appt-actions" onsubmit="return confirm('Cancel this confirmed appointment?');">
+                  <input class="appt-note-input" type="text" name="note" maxlength="200" placeholder="Reason (shown to patient)">
+                  <button class="appt-btn danger" type="submit" formaction="/doctor/appointments/{{ a.id }}/cancel">Cancel</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="appt-empty">No confirmed appointments coming up.</p>
+      {% endif %}
+    </div>
+
+    <!-- History -->
+    <div class="d-card">
+      <h3>Past and closed</h3>
+      {% if history %}
+      <div class="appt-wrap">
+        <table class="appt-table">
+          <thead><tr><th>When</th><th>Patient</th><th>Reason</th><th>Status</th></tr></thead>
+          <tbody>
+            {% for a in history %}
+            <tr>
+              <td class="appt-nowrap">{{ a.date_label }}<div class="appt-sub">{{ a.time_label }}</div></td>
+              <td>{{ a.patient_name }}<div class="appt-sub">{{ a.patient_age }} yrs · {{ a.patient_gender }}</div></td>
+              <td>{{ a.reason }}{% if a.doctor_note %}<div class="appt-sub">Your note: {{ a.doctor_note }}</div>{% endif %}</td>
+              <td><span class="appt-badge {{ a.state }}">{{ a.state_label }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="appt-empty">Nothing here yet.</p>
+      {% endif %}
+    </div>
+  </main>
+</div>
+</body>
+</html>

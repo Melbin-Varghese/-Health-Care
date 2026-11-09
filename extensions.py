@@ -6,6 +6,8 @@ Shared objects created ONCE and imported by every router
 
 from fastapi.templating import Jinja2Templates
 
+import alert_service
+import appointment_service as appts
 import config
 
 templates = Jinja2Templates(directory=str(config.TEMPLATES_DIR))
@@ -24,3 +26,10 @@ def _times12(value):
 
 
 templates.env.filters["times12"] = _times12
+
+# Small helpers the dashboards call directly, so their routes need no changes.
+templates.env.globals["next_appointment"] = appts.next_for_patient
+templates.env.globals["appointments_today"] = appts.today_count_for_doctor
+templates.env.globals["pending_appointments"] = appts.pending_count_for_doctor
+templates.env.globals["open_alert_count"] = alert_service.open_count_for_doctor
+templates.env.globals["urgent_alert_count"] = alert_service.urgent_count_for_doctor

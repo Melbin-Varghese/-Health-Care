@@ -1,0 +1,7 @@
+# Monitor service. Use the venv that already worked for your old patient_monitor backend.
+fastapi>=0.111
+uvicorn[standard]>=0.29
+opencv-python-headless>=4.9,<5   # OpenCV 5 removed CascadeClassifier, which the face detector needs
+mediapipe>=0.10.14
+tensorflow-cpu>=2.16
+numpy>=1.26

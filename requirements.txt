@@ -1,10 +1,3 @@
-fastapi
-uvicorn[standard]
-jinja2
-itsdangerous
-httpx
-python-multipart
-pillow
-numpy
-tensorflow
-apscheduler
+# Everything on one machine:  pip install -r requirements.txt
+-r requirements-app.txt
+-r requirements-ai.txt

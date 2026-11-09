@@ -1,4 +1,4 @@
-{# Sidebar for standalone patient pages. #}
+{# Sidebar for standalone patient pages. Set  nav_active  to: dashboard | appointments | monitor | prescriptions | symptoms | profile #}
 <aside class="sidebar">
   <div class="brand">
     <span class="brand-mark">
@@ -8,19 +8,27 @@
   </div>
 
   <nav class="sidebar-nav">
-    <a href="/patient/dashboard" class="nav-item">
+    <a href="/patient/dashboard" class="nav-item {{ 'active' if nav_active == 'dashboard' }}">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
       Dashboard
     </a>
-    <a href="/patient/dashboard#prescriptions" class="nav-item active">
+    <a href="/patient/appointments" class="nav-item {{ 'active' if nav_active == 'appointments' }}">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      Appointments
+    </a>
+    <a href="/patient/monitor" class="nav-item {{ 'active' if nav_active == 'monitor' }}">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v5"/><path d="M12 16.5h.01"/></svg>
+      Patient Monitor
+    </a>
+    <a href="/patient/dashboard#prescriptions" class="nav-item {{ 'active' if nav_active == 'prescriptions' }}">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 15h6M9 11h6"/><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       Prescriptions
     </a>
-    <a href="/patient/symptom-checker" class="nav-item">
+    <a href="/patient/symptom-checker" class="nav-item {{ 'active' if nav_active == 'symptoms' }}">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.35-9.5-9A5.5 5.5 0 0 1 12 6.5 5.5 5.5 0 0 1 21.5 12c-2.5 4.65-9.5 9-9.5 9z"/><path d="M8 12h2l1.5-3 2 6L15 12h1"/></svg>
       Symptom Checker
     </a>
-    <a href="/patient/profile" class="nav-item">
+    <a href="/patient/profile" class="nav-item {{ 'active' if nav_active == 'profile' }}">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       Profile
     </a>

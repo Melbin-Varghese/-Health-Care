@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Patient Alerts — Sukham</title>
+<link rel="stylesheet" href="/static/css/styleee.css">
+<link rel="stylesheet" href="/static/css/monitor.css">
+</head>
+<body class="dashboard-body">
+<div class="dash-layout">
+
+  {% set nav_active = 'alerts' %}
+  {% include "partials/_doctor_sidebar.html" %}
+
+  <main class="main-content">
+    <div class="topbar">
+      <h2>Patient Alerts</h2>
+      <div class="topbar-actions">
+        <div class="avatar-pill">
+          <span class="avatar-circle">{{ doctor.name[0]|upper }}</span>
+          Dr. {{ doctor.name }}
+        </div>
+      </div>
+    </div>
+
+    {% if flash %}
+    <ul class="flash-list"><li class="flash {{ flash.kind }}">{{ flash.text }}</li></ul>
+    {% endif %}
+
+    <div class="d-card">
+      <h3>Needs a response</h3>
+      <p class="mon-hint">Signals from your patients, from the Help Signal page (hand gesture or button). The newest and most urgent come first. This page refreshes itself when something new arrives.</p>
+
+      {% if open_alerts %}
+        {% for a in open_alerts %}
+        <div class="alert-card {{ a.level }}">
+          <div class="alert-top">
+            <div>
+              <span class="alert-name">{% if a.still_signalling %}<span class="live-dot" title="Still signalling"></span>{% endif %}{{ a.patient_name }}</span>
+              <span class="mon-sub">· {{ a.patient_age }} yrs · {{ a.patient_gender }}</span>
+            </div>
+            <span>
+              {% if a.escalated %}<span class="lv-badge help" title="Nobody responded in time, so every doctor can see it">Escalated, no response yet</span>{% endif %}
+              <span class="lv-badge {{ a.level }}">{{ a.level_label }}</span>
+            </span>
+          </div>
+          <div style="margin-top:6px;">{{ a.detail }}</div>
+          <div class="mon-sub" style="margin-top:4px;">
+            {{ a.source_label }} · first signalled {{ a.created_label }}
+            {% if a.last_signal_at != a.created_at %}· last signal {{ a.last_signal_label }}{% endif %}
+            {% if a.still_signalling %}· <strong>still signalling now</strong>{% endif %}
+          </div>
+          {% if a.level == 'caution' %}
+          <div class="mon-sub" style="margin-top:4px;">This one is an automatic guess from the patient's facial expression and may be wrong.</div>
+          {% endif %}
+          <form method="post" action="/doctor/alerts/{{ a.id }}/acknowledge" class="alert-ack">
+            <input type="text" name="note" maxlength="200" placeholder="Optional note the patient will see (e.g. “Nurse is on the way”)">
+            <button class="mon-btn primary" type="submit">I'm responding</button>
+          </form>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="mon-empty">No open alerts. You're all caught up.</p>
+      {% endif %}
+    </div>
+
+    <div class="d-card">
+      <h3>Earlier alerts</h3>
+      {% if history %}
+      <div class="mon-wrap">
+        <table class="mon-table">
+          <thead><tr><th>When</th><th>Patient</th><th>Signal</th><th>How</th><th>Response</th></tr></thead>
+          <tbody>
+            {% for a in history %}
+            <tr>
+              <td>{{ a.created_label }}</td>
+              <td>{{ a.patient_name }}</td>
+              <td><span class="lv-badge {{ a.level }}">{{ a.level_label }}</span></td>
+              <td>{{ a.source_label }}</td>
+              <td>
+                <span class="state-badge acknowledged">{{ a.responder }} · {{ a.ack_label }}</span>
+                {% if a.ack_note %}<div class="mon-sub">“{{ a.ack_note }}”</div>{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="mon-empty">Nothing here yet.</p>
+      {% endif %}
+      <p class="mon-note">
+        Alerts reach you as a badge, pop-up and sound on any Sukham page while you are logged in and the page is open (click the page once so your browser allows sound).
+        This does not replace your facility's nurse-call system.
+      </p>
+    </div>
+  </main>
+</div>
+
+<script>
+  // Reload when a newer alert than the ones on this page appears.
+  (function () {
+    var pageLatest = {{ latest_id }};
+    window.addEventListener('sukham:alerts', function (e) {
+      if (e.detail && e.detail.latest_id > pageLatest) location.reload();
+    });
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Patient Monitor — Sukham</title>
+<link rel="stylesheet" href="/static/css/styleee.css">
+<link rel="stylesheet" href="/static/css/monitor.css">
+</head>
+<body class="dashboard-body">
+<div class="dash-layout">
+
+  {% set nav_active = 'monitor' %}
+  {% include "partials/_patient_sidebar.html" %}
+
+  <main class="main-content">
+    <div class="topbar">
+      <h2>Patient Monitor</h2>
+      <div class="topbar-actions">
+        <div class="avatar-pill">
+          <span class="avatar-circle">{{ patient.name[0]|upper }}</span>
+          {{ patient.name }}
+        </div>
+      </div>
+    </div>
+
+    <div class="d-card">
+      <h1>Non-Verbal Patient Monitor</h1>
+      <p class="mon-hint">
+        The camera watches your hand and face and alerts your care team <strong>automatically</strong>. Nothing needs to be pressed.
+        It starts by itself when this page opens (choose <strong>Allow</strong> when your browser asks to use the camera).
+        Your picture is analysed live and is <strong>not recorded or saved</strong>.
+        {% if care_doctors %}
+          Alerts go to:
+          {% for d in care_doctors %}Dr. {{ d.name }} ({{ d.department }}){{ ', ' if not loop.last }}{% endfor %}.
+        {% else %}
+          You are not linked to a doctor yet (no prescription or appointment), so every doctor on Sukham will see your alerts.
+        {% endif %}
+        If nobody answers within {{ escalate_after }} seconds, every doctor is alerted.
+      </p>
+      {% if not monitor_online %}
+      <div class="mon-warning" style="margin-bottom:14px;">
+        <strong>The monitor service is not running right now.</strong>
+        Gestures and expressions can't be detected until it is started (<code>uvicorn main:app --port 8002</code> in <code>services/monitor_service</code>).
+      </div>
+      {% endif %}
+
+      <div class="mon-grid">
+        <div>
+          <div class="mon-stage is-off" id="stage">
+            <video id="cam" playsinline muted></video>
+            <canvas id="overlay"></canvas>
+            <div class="mon-off" id="stage-off">Camera not active</div>
+          </div>
+          <div class="mon-controls">
+            <button type="button" class="mon-btn primary" id="btn-start" disabled>Resume monitoring</button>
+            <button type="button" class="mon-btn" id="btn-stop" disabled>Pause monitoring</button>
+            <label class="mon-sub" style="display:flex;align-items:center;gap:6px;">Camera
+              <select id="cam-select" class="mon-select" aria-label="Choose camera"><option value="">Default camera</option></select>
+            </label>
+          </div>
+          <div class="mon-cam-help" id="cam-help" role="alert"><strong id="cam-help-title"></strong><span id="cam-help-text"></span></div>
+        </div>
+
+        <div>
+          <div class="mon-statuscard idle" id="status-card" aria-live="polite">
+            <h3 id="status-title">Status: Starting…</h3>
+            <p id="status-detail">Camera not active.</p>
+          </div>
+          <div class="mon-response" id="response-box" style="display:none;" aria-live="polite"></div>
+          <div class="mon-expr" id="expr-line">Facial expression: no face detected yet.</div>
+          <div class="emo-bars" id="emo-bars" aria-label="Expression probabilities"></div>
+          <p class="mon-sub" style="margin-top:14px;"><strong>Gestures</strong> (hold steady for about a second)</p>
+          <ul class="mon-legend">
+            <li>✋ Open palm: I'm OK (nothing is sent)</li>
+            <li>☝️ One finger: need help</li>
+            <li>✊ Fist: emergency</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="d-card">
+      <h3>Alert history</h3>
+      <div class="mon-wrap">
+        <table class="mon-table">
+          <thead><tr><th>When</th><th>Level</th><th>Source</th><th>Detail</th><th>Response</th></tr></thead>
+          <tbody id="hist-body">
+            {% for a in recent %}
+            <tr>
+              <td>{{ a.created_label }}</td>
+              <td><span class="lv-badge {{ a.level }}">{{ a.level_label }}</span></td>
+              <td>{{ a.source_label }}</td>
+              <td>{{ a.detail }}</td>
+              <td>
+                {% if a.status == 'acknowledged' %}<span class="state-badge acknowledged">{{ a.responder }} · {{ a.ack_label }}</span>{% if a.ack_note %}<div class="mon-sub">“{{ a.ack_note }}”</div>{% endif %}
+                {% else %}<span class="state-badge open">Waiting</span>{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <p class="mon-empty" id="hist-empty" {% if recent %}style="display:none;"{% endif %}>No alerts yet.</p>
+      </div>
+    </div>
+
+    <div class="mon-warning">
+      ⚠️ Not a certified medical device. It can miss or misread a signal, and it only works while this page stays open on screen.
+      A caregiver must be able to see or hear alerts. For a real emergency, always also use your facility's nurse-call system or call your local emergency number.
+    </div>
+  </main>
+</div>
+
+<script>
+(function () {
+  var SEND_MS = 200, MAX_W = 480, PAUSE_KEY = 'sukham_monitor_paused', CAM_KEY = 'sukham_camera_id';
+  var EMOTIONS = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral'];
+  var DISTRESS = { Angry: 1, Disgust: 1, Fear: 1, Sad: 1 };
+  var GESTURE_COLORS = { 'EMERGENCY': '#ff3b30', 'NEED HELP': '#ff9500', 'I\'M OK': '#34c759' };
+  var $ = function (id) { return document.getElementById(id); };
+  var video = $('cam'), overlay = $('overlay'), stage = $('stage'), sendCanvas = document.createElement('canvas');
+  var stream = null, running = false, starting = false, audio = null, retry = null, wake = null;
+  var lastEmotionAt = 0, serviceDown = false;
+
+  /* ---------- small helpers ---------- */
+  function unlockAudio() {
+    try { var C = window.AudioContext || window.webkitAudioContext; audio = audio || new C(); if (audio.state === 'suspended') audio.resume(); } catch (e) {}
+  }
+  function beep(freq, ms) {
+    try {
+      if (!audio) return;
+      var o = audio.createOscillator(), g = audio.createGain();
+      o.frequency.value = freq; g.gain.value = 0.15; o.connect(g); g.connect(audio.destination);
+      o.start(); o.stop(audio.currentTime + ms / 1000);
+    } catch (e) {}
+  }
+  function setStatus(level, title, detail) {
+    $('status-card').className = 'mon-statuscard ' + level;
+    $('status-title').textContent = title; $('status-detail').textContent = detail;
+  }
+  function camHelp(title, text) {
+    var box = $('cam-help');
+    if (!title) { box.classList.remove('show'); return; }
+    $('cam-help-title').textContent = title; $('cam-help-text').textContent = text; box.classList.add('show');
+  }
+  function clearOverlay() { var c = overlay.getContext('2d'); c.clearRect(0, 0, overlay.width, overlay.height); }
+
+  /* ---------- emotion bars ---------- */
+  var barsBuilt = false;
+  function buildBars() {
+    var box = $('emo-bars');
+    EMOTIONS.forEach(function (n) {
+      var row = document.createElement('div'); row.className = 'emo-row';
+      var l = document.createElement('span'); l.textContent = n;
+      var t = document.createElement('div'); t.className = 'emo-track';
+      var f = document.createElement('div'); f.className = 'emo-fill' + (DISTRESS[n] ? ' distress' : ''); f.id = 'emo-' + n; t.appendChild(f);
+      var p = document.createElement('span'); p.className = 'emo-pct'; p.id = 'emop-' + n; p.textContent = '0%';
+      row.appendChild(l); row.appendChild(t); row.appendChild(p); box.appendChild(row);
+    });
+    barsBuilt = true;
+  }
+  buildBars();
+  function showEmotion(e) {
+    if (!e) return;
+    lastEmotionAt = Date.now();
+    $('expr-line').textContent = 'Facial expression: ' + e.label + ' (' + Math.round(e.confidence * 100) + '%)';
+    EMOTIONS.forEach(function (n) {
+      var v = Math.round(((e.probs || {})[n] || 0) * 100);
+      $('emo-' + n).style.width = v + '%'; $('emop-' + n).textContent = v + '%';
+    });
+  }
+  function clearEmotion() {
+    $('expr-line').textContent = 'Facial expression: no face detected yet.';
+    EMOTIONS.forEach(function (n) { $('emo-' + n).style.width = '0'; $('emop-' + n).textContent = '0%'; });
+  }
+
+  /* ---------- care-team response + alert history (refreshed every 3 s) ---------- */
+  function renderHistory(rows) {
+    var body = $('hist-body'); body.innerHTML = '';
+    $('hist-empty').style.display = rows.length ? 'none' : '';
+    rows.forEach(function (a) {
+      var tr = document.createElement('tr');
+      function td(text) { var c = document.createElement('td'); c.textContent = text; tr.appendChild(c); return c; }
+      td(a.when);
+      var lv = document.createElement('td'), b = document.createElement('span'); b.className = 'lv-badge ' + a.level; b.textContent = a.level_label; lv.appendChild(b); tr.appendChild(lv);
+      td(a.source); td(a.detail);
+      var rc = document.createElement('td'), sb = document.createElement('span');
+      sb.className = 'state-badge ' + (a.status === 'acknowledged' ? 'acknowledged' : 'open'); sb.textContent = a.response; rc.appendChild(sb); tr.appendChild(rc);
+      body.appendChild(tr);
+    });
+  }
+  function refreshStatus() {
+    fetch('/patient/monitor/status', { credentials: 'same-origin' })
+      .then(function (r) { if (r.redirected || !r.ok) throw 0; return r.json(); })
+      .then(function (d) {
+        renderHistory(d.history || []);
+        var box = $('response-box'), a = d.alert;
+        if (!a) { box.style.display = 'none'; return; }
+        box.style.display = '';
+        if (a.status === 'acknowledged') {
+          box.className = 'mon-response ok';
+          box.textContent = a.acknowledged_by + ' has seen your alert (' + a.ack_label + ')' + (a.ack_note ? ': \u201c' + a.ack_note + '\u201d' : '') + '.';
+        } else {
+          box.className = 'mon-response';
+          box.textContent = a.level_label + ' alert sent at ' + a.created_label + '. ' +
+            (a.escalated ? 'No answer yet, so every doctor has now been alerted.' : 'Waiting for a doctor to respond.');
+        }
+      }).catch(function () {});
+  }
+  refreshStatus(); setInterval(refreshStatus, 3000);
+
+  /* ---------- drawing on the video (same look as the original monitor) ---------- */
+  function draw(data, sentW, sentH) {
+    var W = overlay.width = video.clientWidth, H = overlay.height = video.clientHeight;
+    var c = overlay.getContext('2d'); c.clearRect(0, 0, W, H);
+    if (data.landmarks) {                                      // x is mirrored to match the selfie view
+      c.fillStyle = '#00e676';
+      data.landmarks.forEach(function (p) { c.beginPath(); c.arc((1 - p[0]) * W, p[1] * H, 4, 0, 6.283); c.fill(); });
+    }
+    if (data.emotion) {
+      var b = data.emotion.box, sx = W / sentW, sy = H / sentH, x = W - (b[0] + b[2]) * sx, y = b[1] * sy;
+      c.strokeStyle = '#ffc800'; c.lineWidth = 2; c.strokeRect(x, y, b[2] * sx, b[3] * sy);
+      c.font = 'bold 16px sans-serif'; c.fillStyle = '#ffc800';
+      c.fillText(data.emotion.label + ' (' + Math.round(data.emotion.confidence * 100) + '%)', x, Math.max(16, y - 8));
+    }
+    if (data.gesture && data.gesture !== 'NO GESTURE') {
+      c.font = 'bold 30px sans-serif'; c.fillStyle = GESTURE_COLORS[data.gesture] || '#fff'; c.fillText(data.gesture, 16, 40);
+    }
+  }
+
+  /* ---------- the frame loop: everything here is automatic ---------- */
+  function loop() {
+    if (!running) return;
+    var w0 = video.videoWidth, h0 = video.videoHeight;
+    if (!w0) { setTimeout(loop, 200); return; }
+    var scale = Math.min(1, MAX_W / w0), w = Math.round(w0 * scale), h = Math.round(h0 * scale);
+    sendCanvas.width = w; sendCanvas.height = h;
+    sendCanvas.getContext('2d').drawImage(video, 0, 0, w, h);
+    sendCanvas.toBlob(function (blob) {
+      if (!running || !blob) { setTimeout(loop, SEND_MS); return; }
+      fetch('/patient/monitor/frame', { method: 'POST', credentials: 'same-origin', body: blob, headers: { 'Content-Type': 'application/octet-stream' } })
+        .then(function (r) {
+          if (r.redirected) { location.href = '/patient/login'; throw 0; }
+          return r.json();
+        }).then(function (d) {
+          if (!d.ok) {
+            serviceDown = true; clearOverlay();
+            setStatus('idle', 'Status: Waiting for the monitor service…', 'The monitor service is not reachable. Retrying…');
+            setTimeout(loop, 3000); return;
+          }
+          serviceDown = false;
+          if (!d.skipped) {
+            draw(d, w, h);
+            setStatus(d.status.level, 'Status: ' + d.status.label, d.status.detail);
+            if (d.emotion) showEmotion(d.emotion);
+            else if (Date.now() - lastEmotionAt > 3000 && lastEmotionAt) { clearEmotion(); lastEmotionAt = 0; }
+            if (d.alert && d.alert.created && d.alert.level !== 'caution') {
+              beep(d.alert.level === 'emergency' ? 1200 : 800, 500);
+              if (navigator.vibrate) navigator.vibrate(200);
+            }
+            if (d.alert && d.alert.created) refreshStatus();
+          }
+          setTimeout(loop, SEND_MS);
+        }).catch(function (e) {
+          if (e === 0) return;
+          setStatus('idle', 'Status: Connection problem', 'Retrying…'); setTimeout(loop, 2000);
+        });
+    }, 'image/jpeg', 0.7);
+  }
+
+  /* ---------- camera: start by itself, pick a device, explain failures, recover ---------- */
+  var PAUSED = function () { try { return localStorage.getItem(PAUSE_KEY) === '1'; } catch (e) { return false; } };
+  var setPaused = function (v) { try { v ? localStorage.setItem(PAUSE_KEY, '1') : localStorage.removeItem(PAUSE_KEY); } catch (e) {} };
+
+  function explain(err) {
+    var n = err && err.name;
+    if (n === 'NotAllowedError' || n === 'SecurityError')
+      return ['Camera permission is blocked', 'Click the camera icon next to the address bar, choose Allow, then press Resume.', false];
+    if (n === 'NotReadableError' || n === 'AbortError')
+      return ['Another program is using the camera', 'Close anything else that uses it (OBS, Zoom, Teams, another browser tab or window), or pick a different camera. Trying again automatically\u2026', true];
+    if (n === 'NotFoundError' || n === 'OverconstrainedError')
+      return ['No camera found', 'Plug in or enable a camera, then press Resume.', false];
+    return ['The camera could not start', 'Press Resume to try again.', false];
+  }
+  function listCameras() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return Promise.resolve([]);
+    return navigator.mediaDevices.enumerateDevices().then(function (ds) {
+      return ds.filter(function (d) { return d.kind === 'videoinput' && d.deviceId; });
+    }).catch(function () { return []; });
+  }
+  function fillCameraList(cams, selected) {
+    var sel = $('cam-select'); sel.innerHTML = '';
+    var def = document.createElement('option'); def.value = ''; def.textContent = 'Default camera'; sel.appendChild(def);
+    cams.forEach(function (c, i) {
+      var o = document.createElement('option'); o.value = c.deviceId; o.textContent = c.label || ('Camera ' + (i + 1)); sel.appendChild(o);
+    });
+    sel.value = selected || '';
+  }
+  function constraints(id) {
+    var v = { width: { ideal: 640 }, height: { ideal: 480 } };
+    if (id) v.deviceId = { exact: id }; else v.facingMode = 'user';
+    return { video: v, audio: false };
+  }
+  function openFirstWorking(ids, i) {            // try the chosen camera, then the others, if one is busy
+    return navigator.mediaDevices.getUserMedia(constraints(ids[i])).catch(function (e) {
+      var busy = e && (e.name === 'NotReadableError' || e.name === 'AbortError' || e.name === 'OverconstrainedError');
+      if (busy && i + 1 < ids.length) return openFirstWorking(ids, i + 1);
+      throw e;
+    });
+  }
+  function keepScreenOn() {
+    try { if ('wakeLock' in navigator) navigator.wakeLock.request('screen').then(function (l) { wake = l; }).catch(function () {}); } catch (e) {}
+  }
+  document.addEventListener('visibilitychange', function () { if (running && document.visibilityState === 'visible') keepScreenOn(); });
+
+  function startCamera() {
+    if (running || starting) return;
+    unlockAudio();
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setStatus('idle', 'Status: Camera not available', 'Your browser blocks the camera on this address. Open http://localhost:9000 or use https.');
+      $('btn-start').disabled = false; return;
+    }
+    starting = true; setPaused(false); camHelp('');
+    setStatus('idle', 'Status: Starting…', 'If your browser asks, choose Allow.');
+    var chosen = $('cam-select').value || (function () { try { return localStorage.getItem(CAM_KEY) || ''; } catch (e) { return ''; } })();
+    listCameras().then(function (cams) {
+      var ids = []; if (chosen) ids.push(chosen); ids.push(null);
+      cams.forEach(function (c) { if (c.deviceId !== chosen) ids.push(c.deviceId); });
+      return openFirstWorking(ids, 0);
+    }).then(function (s) {
+      stream = s; video.srcObject = s;
+      var tr = s.getVideoTracks()[0];
+      tr.addEventListener('ended', function () {
+        if (!running) return;
+        running = false; clearOverlay(); stage.classList.add('is-off');
+        setStatus('idle', 'Status: Camera stopped', 'Trying to reconnect…');
+        retry = setTimeout(function () { starting = false; startCamera(); }, 3000);
+      });
+      try { var st = tr.getSettings && tr.getSettings(); if (st && st.deviceId) localStorage.setItem(CAM_KEY, st.deviceId); } catch (e) {}
+      return video.play().then(function () { return listCameras(); });
+    }).then(function (cams) {
+      starting = false; running = true; stage.classList.remove('is-off');
+      var cur = ''; try { cur = localStorage.getItem(CAM_KEY) || ''; } catch (e) {}
+      fillCameraList(cams, cur);
+      $('btn-start').disabled = true; $('btn-stop').disabled = false;
+      setStatus('ok', 'Status: OK', 'Monitoring is on. No concerning signal.');
+      keepScreenOn(); loop();
+    }).catch(function (e) {
+      starting = false; $('btn-start').disabled = false; stage.classList.add('is-off');
+      var m = explain(e); camHelp(m[0], m[1]);
+      setStatus('idle', 'Status: Camera not active', m[0] + '.');
+      listCameras().then(function (cams) { fillCameraList(cams, $('cam-select').value); });
+      if (m[2] && !PAUSED()) retry = setTimeout(startCamera, 4000);      // busy camera: keep trying by itself
+    });
+  }
+
+  function stopCamera(byUser) {
+    running = false; starting = false; clearTimeout(retry);
+    if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; }
+    if (wake) { try { wake.release(); } catch (e) {} wake = null; }
+    video.srcObject = null; clearOverlay(); stage.classList.add('is-off');
+    $('btn-start').disabled = false; $('btn-stop').disabled = true;
+    clearEmotion(); lastEmotionAt = 0;
+    if (byUser) setPaused(true);
+    setStatus('idle', 'Status: Monitoring paused', 'Camera not active. Press Resume to turn monitoring back on.');
+    fetch('/patient/monitor/stop', { method: 'POST', credentials: 'same-origin' }).catch(function () {});
+  }
+
+  $('btn-start').addEventListener('click', startCamera);
+  $('btn-stop').addEventListener('click', function () { stopCamera(true); });
+  $('cam-select').addEventListener('change', function () {
+    try { localStorage.setItem(CAM_KEY, this.value); } catch (e) {}
+    if (running) { stopCamera(false); setPaused(false); startCamera(); }
+  });
+  window.addEventListener('pagehide', function () { if (running && navigator.sendBeacon) navigator.sendBeacon('/patient/monitor/stop'); });
+
+  // Automatic: start as soon as the page opens, unless the patient paused it on purpose.
+  if (PAUSED()) { stopCamera(false); $('btn-start').disabled = false; } else startCamera();
+})();
+</script>
+</body>
+</html>

@@ -20,15 +20,17 @@
       <h1>Patient login</h1>
       <p class="subtitle">Log in to view your vitals, appointments and reports.</p>
 
-      
-        
-     
+      {% if error %}
+      <div class="form-errors"><p>{{ error }}</p></div>
+      {% endif %}
+      {% if errors %}
+      <div class="form-errors">{% for e in errors %}<p>{{ e }}</p>{% endfor %}</div>
+      {% endif %}
 
       <form method="POST" action="/patient/login">
         <div class="field">
-          <label for="email">Email address</label>
-          <input type="email" id="email" name="email" placeholder="patient@example.com">
-                 
+          <label for="email">Email or phone number</label>
+          <input type="text" id="email" name="email" placeholder="patient@example.com or phone" value="{{ form.email if form else '' }}" autocomplete="username" required>
         </div>
 
         <div class="field">
